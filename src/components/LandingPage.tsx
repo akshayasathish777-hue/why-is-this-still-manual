@@ -22,25 +22,11 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
     },
   ];
 
-  const benefits = [
-    {
-      emoji: "🔍",
-      title: "Solve your manual tasks",
-      description:
-        "Get deep insights into what's slowing you down and why your processes are still manual.",
-    },
-    {
-      emoji: "💡",
-      title: "Discover problems worth solving",
-      description:
-        "Explore real-world pains and unmet needs that are ripe for AI‑driven solutions.",
-    },
-    {
-      emoji: "🚀",
-      title: "Act fast, build smarter",
-      description:
-        "Turn insights into action with clear next steps to automate or prototype fast.",
-    },
+  // Giant hero benefits, clean stacked text
+  const benefitsText = [
+    "Solve your manual tasks",
+    "Discover problems worth solving",
+    "Act fast, build smarter",
   ];
 
   return (
@@ -55,42 +41,32 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
         transition={{ duration: 0.6 }}
         className="text-center mb-8 relative z-10 max-w-2xl"
       >
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="inline-flex items-center gap-2 mb-4"
-        >
-          <Flame className="w-10 h-10 text-flame-yellow flame-bloom" />
-        </motion.div>
-
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 text-[#ffba08]">
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 text-[#ffba08]">
           Why Is This Still Manual?
         </h1>
-        <p className="text-white/80 text-lg md:text-xl">
+        <p className="text-white/80 text-lg md:text-xl mb-8">
           Discover automation opportunities hiding in your daily workflows
         </p>
-      </motion.div>
 
-      {/* Benefits / How It Works */}
-      <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl z-10 mb-12">
-        {benefits.map((b, index) => (
-          <motion.div
-            key={b.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 + index * 0.1, duration: 0.5 }}
-            className="flex flex-col items-start gap-2 p-4 border border-[#6a040f] bg-black/70 backdrop-blur-xl rounded-xl"
-          >
-            <span className="text-2xl">{b.emoji}</span>
-            <h3 className="text-xl font-semibold text-white">
-              {b.title}
-            </h3>
-            <p className="text-white/70 text-sm">
-              {b.description}
-            </p>
-          </motion.div>
-        ))}
+        {/* Hero Benefits Section - clean, stacked text */}
+        <motion.div
+          className="space-y-6 md:space-y-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          {benefitsText.map((text, index) => (
+            <motion.h3
+              key={text}
+              className="text-3xl md:text-5xl lg:text-6xl font-bold text-white"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 + index * 0.1, duration: 0.5 }}
+            >
+              {text}
+            </motion.h3>
+          ))}
+        </motion.div>
       </motion.div>
 
       {/* Choice Cards */}
@@ -118,9 +94,7 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
               <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
                 {card.title}
               </h2>
-              <p className="text-white/60 text-lg">
-                {card.subtitle}
-              </p>
+              <p className="text-white/60 text-lg">{card.subtitle}</p>
             </div>
           </motion.button>
         ))}
@@ -130,4 +104,3 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
 };
 
 export default LandingPage;
-
