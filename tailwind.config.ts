@@ -13,6 +13,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -47,16 +50,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
-        },
+        // Fire theme colors
+        "flame-yellow": "hsl(var(--flame-yellow))",
+        "flame-orange": "hsl(var(--flame-orange))",
+        "flame-red": "hsl(var(--flame-red))",
+        "ember-dark": "hsl(var(--ember-dark))",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -65,25 +63,47 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "pulse-fire": {
+          "0%, 100%": {
+            transform: "scale(1)",
+            filter: "drop-shadow(0 0 5px hsl(45 100% 51%))",
           },
-          to: {
-            height: "0",
+          "50%": {
+            transform: "scale(1.15)",
+            filter: "drop-shadow(0 0 20px hsl(24 95% 46%))",
           },
+        },
+        "glow-pulse": {
+          "0%, 100%": {
+            boxShadow: "0 0 20px hsl(24 95% 46% / 0.3)",
+          },
+          "50%": {
+            boxShadow: "0 0 40px hsl(24 95% 46% / 0.5), 0 0 60px hsl(45 100% 51% / 0.3)",
+          },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-fire": "pulse-fire 2s ease-in-out infinite",
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        shimmer: "shimmer 2s linear infinite",
+      },
+      boxShadow: {
+        flame: "0 0 20px hsl(24 95% 46% / 0.3)",
+        "flame-intense": "0 0 40px hsl(24 95% 46% / 0.5), 0 0 80px hsl(45 100% 51% / 0.2)",
+        ember: "0 4px 20px hsl(0 100% 21% / 0.5)",
       },
     },
   },
