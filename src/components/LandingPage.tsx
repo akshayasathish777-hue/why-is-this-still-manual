@@ -22,13 +22,6 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
     },
   ];
 
-  // Giant hero benefits, clean stacked text
-  const benefitsText = [
-    "Solve your manual tasks",
-    "Discover problems worth solving",
-    "Act fast, build smarter",
-  ];
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative text-white">
       {/* Animated Background */}
@@ -101,6 +94,7 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
       </div>
     </div>
   );
+  const benefitsText = ["Act fast, build smarter"];
 };
 
 export default LandingPage;
