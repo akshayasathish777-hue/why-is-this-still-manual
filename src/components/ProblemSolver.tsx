@@ -22,21 +22,24 @@ const ProblemSolver = ({ onViewChange, onAnalyze }: ProblemSolverProps) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col px-6 py-8 md:py-12">
+    <div className="min-h-screen flex flex-col px-6 py-8 md:py-12 relative">
+      {/* Animated Mesh Gradient Background */}
+      <div className="mesh-gradient-bg" />
+
       {/* Back Button */}
       <motion.button
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3 }}
         onClick={() => onViewChange('landing')}
-        className="flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-8 w-fit group"
+        className="flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-8 w-fit group relative z-10"
       >
         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         <span>Back</span>
       </motion.button>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center max-w-3xl mx-auto w-full">
+      <div className="flex-1 flex flex-col items-center justify-center max-w-3xl mx-auto w-full relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -73,7 +76,7 @@ For example: Every morning I spend 30 minutes copying data from emails into a sp
           <div className="relative">
             <motion.button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="glass-card w-full p-4 flex items-center justify-between text-left hover:border-flame-orange/50 transition-colors"
+              className="glass-card w-full p-4 flex items-center justify-between text-left"
             >
               <span className={selectedRole ? 'text-white' : 'text-gray-500'}>
                 {selectedRole || 'Select your role...'}
@@ -109,7 +112,7 @@ For example: Every morning I spend 30 minutes copying data from emails into a sp
             )}
           </div>
 
-          {/* CTA Button */}
+          {/* CTA Button with Gradient and Pulse */}
           <motion.button
             onClick={handleAnalyze}
             disabled={!description.trim()}
@@ -117,14 +120,26 @@ For example: Every morning I spend 30 minutes copying data from emails into a sp
             whileTap={{ scale: 0.98 }}
             className={`w-full py-4 px-6 rounded-xl font-semibold text-lg flex items-center justify-center gap-3 transition-all duration-300 ${
               description.trim()
-                ? 'bg-flame-orange text-white shadow-flame hover:shadow-flame-intense'
+                ? 'btn-fire-gradient'
                 : 'bg-muted text-muted-foreground cursor-not-allowed'
             }`}
           >
-            <Flame className="w-5 h-5" />
+            <Flame className={`w-5 h-5 ${description.trim() ? 'flame-bloom' : ''}`} />
             Analyze My Process
           </motion.button>
         </motion.div>
+      </div>
+
+      {/* Ambient background glow */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.15, 1],
+            opacity: [0.04, 0.07, 0.04]
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-flame-orange rounded-full blur-[180px]" 
+        />
       </div>
     </div>
   );
