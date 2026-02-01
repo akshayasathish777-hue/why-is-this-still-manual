@@ -25,14 +25,17 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading }: CuriousBuilderPro
   );
 
   return (
-    <div className="min-h-screen flex flex-col px-6 py-8 md:py-12">
+    <div className="min-h-screen flex flex-col px-6 py-8 md:py-12 relative">
+      {/* Animated Mesh Gradient Background */}
+      <div className="mesh-gradient-bg" />
+
       {/* Back Button */}
       <motion.button
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3 }}
         onClick={() => onViewChange('landing')}
-        className="flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-8 w-fit group"
+        className="flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-8 w-fit group relative z-10"
       >
         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         <span>Back</span>
@@ -43,7 +46,7 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading }: CuriousBuilderPro
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-center mb-10 max-w-3xl mx-auto"
+        className="text-center mb-10 max-w-3xl mx-auto relative z-10"
       >
         <h1 className="headline-fire text-3xl md:text-5xl mb-4">
           Explore Real-World Problems
@@ -58,7 +61,7 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading }: CuriousBuilderPro
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.5 }}
-        className="max-w-3xl mx-auto w-full mb-8 space-y-4"
+        className="max-w-3xl mx-auto w-full mb-8 space-y-4 relative z-10"
       >
         {/* Search Bar */}
         <div className="glass-card p-2 flex items-center gap-3">
@@ -87,7 +90,7 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading }: CuriousBuilderPro
       </motion.div>
 
       {/* Problems Grid */}
-      <div className="max-w-5xl mx-auto w-full flex-1">
+      <div className="max-w-5xl mx-auto w-full flex-1 relative z-10">
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((i) => (
@@ -107,15 +110,14 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading }: CuriousBuilderPro
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + index * 0.05, duration: 0.4 }}
                 whileHover={{ 
-                  y: -6, 
+                  y: -8, 
                   scale: 1.01,
-                  boxShadow: '0 0 25px rgba(232, 93, 4, 0.25)' 
                 }}
                 whileTap={{ scale: 0.98 }}
-                className="glass-card p-6 cursor-pointer group"
+                className="glass-card card-interactive p-6 cursor-pointer group"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-white group-hover:text-flame-yellow transition-colors pr-4">
+                  <h3 className="text-xl font-semibold text-white group-hover:text-flame-yellow group-hover:text-glow-fire transition-all duration-300 pr-4">
                     {problem.title}
                   </h3>
                   <div className="flex items-center gap-1 text-flame-orange shrink-0">
@@ -125,7 +127,7 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading }: CuriousBuilderPro
                 </div>
                 
                 <div className="flex items-center gap-3">
-                  <span className="px-3 py-1 rounded-full bg-flame-orange/10 text-flame-orange text-sm">
+                  <span className="px-3 py-1 rounded-full bg-flame-orange/10 text-flame-orange text-sm border border-flame-orange/20">
                     {problem.domain}
                   </span>
                   <span className="text-white/50 text-sm">
@@ -146,6 +148,18 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading }: CuriousBuilderPro
             </p>
           </motion.div>
         )}
+      </div>
+
+      {/* Ambient background glow */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.03, 0.06, 0.03]
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] bg-flame-yellow rounded-full blur-[200px]" 
+        />
       </div>
     </div>
   );

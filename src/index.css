@@ -46,21 +46,31 @@
     --flame-orange: 24 95% 46%;
     --flame-red: 0 100% 41%;
     --ember-dark: 0 100% 21%;
+    --deep-wine: 350 100% 22%;
     --pure-black: 0 0% 0%;
+
+    /* OLED Glow Colors (rgba for glow effects) */
+    --glow-orange: 232 93 4;
+    --glow-yellow: 255 186 8;
+    --glow-wine: 106 4 15;
 
     /* Gradients */
     --gradient-fire: linear-gradient(135deg, hsl(var(--flame-orange)), hsl(var(--flame-yellow)));
     --gradient-ember: linear-gradient(180deg, hsl(var(--flame-orange) / 0.2), transparent);
     --gradient-glow: radial-gradient(circle at center, hsl(var(--flame-orange) / 0.3), transparent 70%);
+    --gradient-button: linear-gradient(135deg, #e85d04, #ffba08);
 
-    /* Shadows */
-    --shadow-flame: 0 0 20px hsl(var(--flame-orange) / 0.3);
-    --shadow-glow: 0 0 40px hsl(var(--flame-yellow) / 0.2);
+    /* OLED Shadows */
+    --shadow-flame: 0 0 25px rgba(232, 93, 4, 0.3);
+    --shadow-flame-intense: 0 0 40px rgba(232, 93, 4, 0.5), 0 0 80px rgba(255, 186, 8, 0.2);
+    --shadow-glow: 0 0 40px rgba(255, 186, 8, 0.2);
     --shadow-ember: 0 4px 20px hsl(var(--ember-dark) / 0.5);
+    --shadow-neon-bloom: 0 0 25px rgba(232, 93, 4, 0.3);
 
-    /* Glassmorphism */
-    --glass-bg: hsl(0 0% 0% / 0.8);
-    --glass-border: hsl(var(--ember-dark));
+    /* Glassmorphism 2.0 */
+    --glass-bg: rgba(0, 0, 0, 0.6);
+    --glass-border: rgba(255, 186, 8, 0.2);
+    --glass-border-hover: rgba(255, 186, 8, 0.5);
   }
 }
 
@@ -80,30 +90,109 @@
 }
 
 @layer components {
-  /* Glassmorphism Card Base */
-  .glass-card {
-    @apply bg-black/80 backdrop-blur-xl border border-ember-dark rounded-xl;
+  /* Animated Mesh Gradient Background */
+  .mesh-gradient-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    overflow: hidden;
   }
 
-  /* Bento Grid Cards */
+  .mesh-gradient-bg::before {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    top: -25%;
+    left: -25%;
+    background: 
+      radial-gradient(ellipse 80% 60% at 20% 30%, rgba(106, 4, 15, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 80% at 80% 70%, rgba(106, 4, 15, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 70% 50% at 50% 50%, rgba(232, 93, 4, 0.04) 0%, transparent 50%);
+    animation: mesh-shift 20s ease-in-out infinite;
+  }
+
+  @keyframes mesh-shift {
+    0%, 100% {
+      transform: translate(0, 0) rotate(0deg);
+    }
+    25% {
+      transform: translate(5%, 3%) rotate(1deg);
+    }
+    50% {
+      transform: translate(-3%, 5%) rotate(-1deg);
+    }
+    75% {
+      transform: translate(-5%, -3%) rotate(0.5deg);
+    }
+  }
+
+  /* Glassmorphism 2.0 Card Base */
+  .glass-card {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 186, 8, 0.2);
+    border-radius: 0.75rem;
+    box-shadow: 0 0 25px rgba(232, 93, 4, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .glass-card:hover {
+    border-color: rgba(255, 186, 8, 0.5);
+    box-shadow: 0 0 40px rgba(232, 93, 4, 0.5), 0 0 60px rgba(255, 186, 8, 0.15);
+  }
+
+  /* Bento Grid Cards with distinct borders */
   .bento-card {
-    @apply glass-card p-6 transition-all duration-300;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 0 25px rgba(232, 93, 4, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .bento-card:hover {
+    box-shadow: 0 0 40px rgba(232, 93, 4, 0.5), 0 0 60px rgba(255, 186, 8, 0.15);
   }
 
   .bento-card-overview {
-    @apply bento-card border-white/20;
+    @apply bento-card;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .bento-card-overview:hover {
+    border-color: rgba(255, 255, 255, 0.5);
   }
 
   .bento-card-why {
-    @apply bento-card border-flame-red;
+    @apply bento-card;
+    border: 1px solid rgba(208, 0, 0, 0.4);
+  }
+
+  .bento-card-why:hover {
+    border-color: rgba(208, 0, 0, 0.7);
   }
 
   .bento-card-opportunity {
-    @apply bento-card border-flame-orange;
+    @apply bento-card;
+    border: 1px solid rgba(232, 93, 4, 0.4);
+  }
+
+  .bento-card-opportunity:hover {
+    border-color: rgba(232, 93, 4, 0.7);
   }
 
   .bento-card-next {
-    @apply bento-card border-flame-yellow;
+    @apply bento-card;
+    border: 1px solid rgba(255, 186, 8, 0.4);
+  }
+
+  .bento-card-next:hover {
+    border-color: rgba(255, 186, 8, 0.7);
   }
 
   /* Fire Input Styles */
@@ -114,7 +203,7 @@
   }
 
   .fire-input:focus {
-    box-shadow: 0 0 20px hsl(var(--flame-orange) / 0.3);
+    box-shadow: 0 0 20px rgba(232, 93, 4, 0.4);
   }
 
   /* Fire Textarea */
@@ -122,34 +211,107 @@
     @apply fire-input min-h-[160px] resize-none;
   }
 
-  /* Headline Styles */
+  /* Neon Headline Styles */
   .headline-fire {
-    @apply text-flame-yellow font-bold tracking-tight;
+    @apply font-bold tracking-tight;
+    color: #ffba08;
+    text-shadow: 
+      0 0 10px rgba(255, 186, 8, 0.5),
+      0 0 20px rgba(255, 186, 8, 0.3),
+      0 0 40px rgba(255, 186, 8, 0.2);
   }
 
   /* Pill Toggle */
   .pill-toggle {
-    @apply px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
-           bg-muted text-muted-foreground hover:bg-muted/80;
+    @apply px-4 py-2 rounded-full text-sm font-medium transition-all duration-200;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 186, 8, 0.2);
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .pill-toggle:hover {
+    border-color: rgba(255, 186, 8, 0.4);
+    color: white;
   }
 
   .pill-toggle-active {
-    @apply bg-flame-orange text-white shadow-flame;
+    background: linear-gradient(135deg, #e85d04, #ffba08);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 0 20px rgba(232, 93, 4, 0.5);
+  }
+
+  /* Gradient CTA Button */
+  .btn-fire-gradient {
+    background: linear-gradient(135deg, #e85d04, #ffba08);
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 0.75rem;
+    padding: 1rem 1.5rem;
+    transition: all 0.3s ease;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .btn-fire-gradient:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 40px rgba(232, 93, 4, 0.6), 0 0 60px rgba(255, 186, 8, 0.3);
+  }
+
+  .btn-fire-gradient:disabled {
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+    animation: none;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(232, 93, 4, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 35px rgba(232, 93, 4, 0.6), 0 0 50px rgba(255, 186, 8, 0.25);
+    }
   }
 }
 
 @layer utilities {
   /* Fire glow effects */
   .glow-fire {
-    box-shadow: 0 0 20px hsl(var(--flame-orange) / 0.3);
+    box-shadow: 0 0 25px rgba(232, 93, 4, 0.3);
   }
 
   .glow-fire-intense {
-    box-shadow: 0 0 40px hsl(var(--flame-orange) / 0.5), 0 0 80px hsl(var(--flame-yellow) / 0.2);
+    box-shadow: 0 0 40px rgba(232, 93, 4, 0.5), 0 0 80px rgba(255, 186, 8, 0.2);
   }
 
-  /* Text glow */
+  /* Neon text glow */
   .text-glow-fire {
-    text-shadow: 0 0 20px hsl(var(--flame-orange) / 0.5);
+    text-shadow: 
+      0 0 10px rgba(255, 186, 8, 0.5),
+      0 0 20px rgba(255, 186, 8, 0.3),
+      0 0 40px rgba(255, 186, 8, 0.2);
+  }
+
+  /* Flame bloom filter for icons */
+  .flame-bloom {
+    filter: drop-shadow(0 0 15px #ffba08) drop-shadow(0 0 30px rgba(232, 93, 4, 0.5));
+  }
+
+  .flame-bloom-intense {
+    filter: drop-shadow(0 0 20px #ffba08) drop-shadow(0 0 40px rgba(232, 93, 4, 0.6)) drop-shadow(0 0 60px rgba(255, 186, 8, 0.3));
+  }
+
+  /* Interactive card hover enhancement */
+  .card-interactive {
+    transition: all 0.3s ease;
+  }
+
+  .card-interactive:hover {
+    transform: translateY(-8px) scale(1.01);
+    border-color: rgba(255, 186, 8, 0.5) !important;
+    box-shadow: 0 0 40px rgba(232, 93, 4, 0.5), 0 0 60px rgba(255, 186, 8, 0.2);
   }
 }

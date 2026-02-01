@@ -55,6 +55,7 @@ export default {
         "flame-orange": "hsl(var(--flame-orange))",
         "flame-red": "hsl(var(--flame-red))",
         "ember-dark": "hsl(var(--ember-dark))",
+        "deep-wine": "hsl(var(--deep-wine))",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -73,24 +74,34 @@ export default {
         "pulse-fire": {
           "0%, 100%": {
             transform: "scale(1)",
-            filter: "drop-shadow(0 0 5px hsl(45 100% 51%))",
+            filter: "drop-shadow(0 0 15px #ffba08) drop-shadow(0 0 30px rgba(232, 93, 4, 0.5))",
           },
           "50%": {
             transform: "scale(1.15)",
-            filter: "drop-shadow(0 0 20px hsl(24 95% 46%))",
+            filter: "drop-shadow(0 0 25px #ffba08) drop-shadow(0 0 50px rgba(232, 93, 4, 0.7)) drop-shadow(0 0 80px rgba(255, 186, 8, 0.4))",
           },
         },
         "glow-pulse": {
           "0%, 100%": {
-            boxShadow: "0 0 20px hsl(24 95% 46% / 0.3)",
+            boxShadow: "0 0 20px rgba(232, 93, 4, 0.4)",
           },
           "50%": {
-            boxShadow: "0 0 40px hsl(24 95% 46% / 0.5), 0 0 60px hsl(45 100% 51% / 0.3)",
+            boxShadow: "0 0 35px rgba(232, 93, 4, 0.6), 0 0 50px rgba(255, 186, 8, 0.25)",
           },
         },
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
+        },
+        "mesh-shift": {
+          "0%, 100%": { transform: "translate(0, 0) rotate(0deg)" },
+          "25%": { transform: "translate(5%, 3%) rotate(1deg)" },
+          "50%": { transform: "translate(-3%, 5%) rotate(-1deg)" },
+          "75%": { transform: "translate(-5%, -3%) rotate(0.5deg)" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
         },
       },
       animation: {
@@ -99,11 +110,19 @@ export default {
         "pulse-fire": "pulse-fire 2s ease-in-out infinite",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
         shimmer: "shimmer 2s linear infinite",
+        "mesh-shift": "mesh-shift 20s ease-in-out infinite",
+        "float": "float 3s ease-in-out infinite",
       },
       boxShadow: {
-        flame: "0 0 20px hsl(24 95% 46% / 0.3)",
-        "flame-intense": "0 0 40px hsl(24 95% 46% / 0.5), 0 0 80px hsl(45 100% 51% / 0.2)",
+        flame: "0 0 25px rgba(232, 93, 4, 0.3)",
+        "flame-intense": "0 0 40px rgba(232, 93, 4, 0.5), 0 0 80px rgba(255, 186, 8, 0.2)",
+        "flame-hover": "0 0 40px rgba(232, 93, 4, 0.5), 0 0 60px rgba(255, 186, 8, 0.15)",
         ember: "0 4px 20px hsl(0 100% 21% / 0.5)",
+        "neon-bloom": "0 0 25px rgba(232, 93, 4, 0.3)",
+      },
+      backdropBlur: {
+        '2xl': '24px',
+        '3xl': '40px',
       },
     },
   },
