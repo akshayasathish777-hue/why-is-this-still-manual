@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      curated_problems: {
+        Row: {
+          action: string | null
+          automation: string | null
+          created_at: string
+          domain: string
+          gap: string | null
+          id: string
+          overview: string | null
+          role: string | null
+          search_query: string | null
+          source_type: string | null
+          source_url: string | null
+          title: string
+        }
+        Insert: {
+          action?: string | null
+          automation?: string | null
+          created_at?: string
+          domain: string
+          gap?: string | null
+          id?: string
+          overview?: string | null
+          role?: string | null
+          search_query?: string | null
+          source_type?: string | null
+          source_url?: string | null
+          title: string
+        }
+        Update: {
+          action?: string | null
+          automation?: string | null
+          created_at?: string
+          domain?: string
+          gap?: string | null
+          id?: string
+          overview?: string | null
+          role?: string | null
+          search_query?: string | null
+          source_type?: string | null
+          source_url?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
