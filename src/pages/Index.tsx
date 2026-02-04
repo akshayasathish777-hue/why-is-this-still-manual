@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import LandingPage from '@/components/LandingPage';
 import ProblemSolver from '@/components/ProblemSolver';
@@ -9,24 +9,6 @@ import { analyzeApi, type AnalyzedProblem } from '@/lib/api/analyze';
 import { useToast } from '@/hooks/use-toast';
 import type { ViewType, CuratedProblem } from '@/types/views';
 
-// Mock data for CuriousBuilder - will be replaced with Supabase data
-const mockProblems: CuratedProblem[] = [
-  {
-    id: '1',
-    title: 'Manually copying invoice data to spreadsheets',
-    domain: 'Finance',
-    role: 'Accountant',
-    upvotes: 234,
-  },
-  {
-    id: '2',
-    title: 'Scheduling social media posts across platforms',
-    domain: 'Marketing',
-    role: 'Social Media Manager',
-    upvotes: 189,
-  },
-];
-
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -36,10 +18,61 @@ const pageVariants = {
 const Index = () => {
   const [currentView, setCurrentView] = useState<ViewType>('landing');
   const [isLoading, setIsLoading] = useState(false);
-  const [problems] = useState<CuratedProblem[]>(mockProblems);
-  const [isProblemsLoading] = useState(false);
+  const [problems, setProblems] = useState<CuratedProblem[]>([]);
+  const [isProblemsLoading, setIsProblemsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalyzedProblem | null>(null);
   const { toast } = useToast();
+
+  // Fetch problems from database
+  const fetchProblems = useCallback(async () => {
+    setIsProblemsLoading(true);
+    try {
+      const data = await analyzeApi.fetchProblems();
+      setProblems(data as CuratedProblem[]);
+    } catch (error) {
+      console.error('Failed to fetch problems:', error);
+    } finally {
+      setIsProblemsLoading(false);
+    }
+  }, []);
+
+  // Load problems when entering builder view
+  useEffect(() => {
+    if (currentView === 'builder') {
+      fetchProblems();
+    }
+  }, [currentView, fetchProblems]);
+
+  // Discover new problems in builder mode
+  const handleDiscoverProblems = async (query: string) => {
+    setIsProblemsLoading(true);
+    try {
+      const response = await analyzeApi.analyzeProblem(query, 'builder');
+      if (response.success && response.data) {
+        // Refresh the list after discovering new problems
+        await fetchProblems();
+        toast({
+          title: "Problems discovered!",
+          description: `Found ${response.data.length} new workflow problems.`,
+        });
+      } else {
+        toast({
+          title: "Discovery failed",
+          description: response.error || "Could not find problems for this topic.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Discovery error:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProblemsLoading(false);
+    }
+  };
 
   const handleAnalyze = async (description: string, role: string) => {
     setIsLoading(true);
@@ -126,6 +159,11 @@ const Index = () => {
               onViewChange={handleViewChange}
               problems={problems}
               isLoading={isProblemsLoading}
+              onDiscoverProblems={handleDiscoverProblems}
+              onSelectProblem={(problem) => {
+                setAnalysisResult(problem as AnalyzedProblem);
+                setCurrentView('dashboard');
+              }}
             />
           </motion.div>
         )}

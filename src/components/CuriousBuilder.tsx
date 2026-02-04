@@ -1,28 +1,44 @@
-import { useState } from 'react';
+import { useState, KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Search, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Search, Sparkles, ExternalLink } from 'lucide-react';
 import type { ViewType, SourceFilter, CuratedProblem } from '@/types/views';
 
 interface CuriousBuilderProps {
   onViewChange: (view: ViewType) => void;
   problems: CuratedProblem[];
   isLoading: boolean;
+  onDiscoverProblems: (query: string) => Promise<void>;
+  onSelectProblem: (problem: CuratedProblem) => void;
 }
 
 const sourceFilters: { id: SourceFilter; label: string }[] = [
+  { id: 'all', label: 'All Problems' },
   { id: 'reddit', label: 'Reddit' },
   { id: 'app-reviews', label: 'App Reviews' },
-  { id: 'curated', label: 'Curated Problems' },
 ];
 
-const CuriousBuilder = ({ onViewChange, problems, isLoading }: CuriousBuilderProps) => {
+const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems, onSelectProblem }: CuriousBuilderProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeSource, setActiveSource] = useState<SourceFilter>('curated');
+  const [activeSource, setActiveSource] = useState<SourceFilter>('all');
 
-  const filteredProblems = problems.filter(problem =>
-    problem.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    problem.domain.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProblems = problems.filter(problem => {
+    const matchesSearch = problem.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      problem.domain.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSource = activeSource === 'all' || problem.source_type === activeSource;
+    return matchesSearch && matchesSource;
+  });
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      onDiscoverProblems(searchQuery.trim());
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col px-6 py-8 md:py-12 relative">
@@ -64,15 +80,25 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading }: CuriousBuilderPro
         className="max-w-3xl mx-auto w-full mb-8 space-y-4 relative z-10"
       >
         {/* Search Bar */}
-        <div className="glass-card p-2 flex items-center gap-3">
+        <div className="glass-card p-2 flex items-center gap-2">
           <Search className="w-5 h-5 text-flame-orange ml-2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Enter topic, app name, or pain area..."
+            onKeyDown={handleKeyDown}
+            placeholder="Enter topic to discover problems..."
             className="fire-input flex-1 px-2"
+            disabled={isLoading}
           />
+          <button
+            onClick={handleSearch}
+            disabled={isLoading || !searchQuery.trim()}
+            className="fire-button px-4 py-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span className="hidden sm:inline">Discover</span>
+          </button>
         </div>
 
         {/* Source Toggle Pills */}
@@ -114,25 +140,46 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading }: CuriousBuilderPro
                   scale: 1.01,
                 }}
                 whileTap={{ scale: 0.98 }}
+                onClick={() => onSelectProblem(problem)}
                 className="glass-card card-interactive p-6 cursor-pointer group"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-white group-hover:text-flame-yellow group-hover:text-glow-fire transition-all duration-300 pr-4">
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-xl font-semibold text-white group-hover:text-flame-yellow group-hover:text-glow-fire transition-all duration-300 pr-4 line-clamp-2">
                     {problem.title}
                   </h3>
-                  <div className="flex items-center gap-1 text-flame-orange shrink-0">
-                    <TrendingUp className="w-4 h-4" />
-                    <span className="text-sm font-medium">{problem.upvotes}</span>
-                  </div>
+                  {problem.source_url && (
+                    <a 
+                      href={problem.source_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-white/40 hover:text-flame-orange transition-colors shrink-0"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  )}
                 </div>
                 
-                <div className="flex items-center gap-3">
+                {problem.overview && (
+                  <p className="text-white/60 text-sm mb-4 line-clamp-2">
+                    {problem.overview}
+                  </p>
+                )}
+                
+                <div className="flex items-center gap-3 flex-wrap">
                   <span className="px-3 py-1 rounded-full bg-flame-orange/10 text-flame-orange text-sm border border-flame-orange/20">
                     {problem.domain}
                   </span>
-                  <span className="text-white/50 text-sm">
-                    {problem.role}
-                  </span>
+                  {problem.role && (
+                    <span className="text-white/50 text-sm">
+                      {problem.role}
+                    </span>
+                  )}
+                  {problem.source_type && (
+                    <span className="text-white/30 text-xs capitalize">
+                      via {problem.source_type}
+                    </span>
+                  )}
                 </div>
               </motion.div>
             ))}
