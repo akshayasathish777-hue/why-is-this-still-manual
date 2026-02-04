@@ -1,107 +1,121 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft, Eye, AlertTriangle, Zap, ArrowRight } from 'lucide-react';
 import type { ViewType } from '@/types/views';
+import type { AnalyzedProblem } from '@/lib/api/analyze';
 
 interface DashboardProps {
   onViewChange: (view: ViewType) => void;
+  analysisResult: AnalyzedProblem | null;
 }
 
-const panels = [
-  {
-    id: 'overview',
-    title: 'Overview',
-    icon: Eye,
-    borderClass: 'bento-card-overview',
-    description: 'Your task analysis summary and key insights at a glance.',
-    content: (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="text-white/60">Time spent weekly</span>
-          <span className="text-white font-semibold">~8 hours</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-white/60">Automation potential</span>
-          <span className="text-flame-yellow font-semibold text-glow-fire">High</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-white/60">Complexity</span>
-          <span className="text-flame-orange font-semibold">Medium</span>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: 'why-manual',
-    title: 'Why Still Manual?',
-    icon: AlertTriangle,
-    borderClass: 'bento-card-why',
-    description: 'Root causes keeping this process manual.',
-    content: (
-      <ul className="space-y-3">
-        <li className="flex items-start gap-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-flame-red mt-2 shrink-0 shadow-[0_0_8px_rgba(208,0,0,0.6)]" />
-          <span className="text-white/80">Data scattered across multiple systems</span>
-        </li>
-        <li className="flex items-start gap-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-flame-red mt-2 shrink-0 shadow-[0_0_8px_rgba(208,0,0,0.6)]" />
-          <span className="text-white/80">No standardized input format</span>
-        </li>
-        <li className="flex items-start gap-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-flame-red mt-2 shrink-0 shadow-[0_0_8px_rgba(208,0,0,0.6)]" />
-          <span className="text-white/80">Legacy tools lack API integrations</span>
-        </li>
-      </ul>
-    ),
-  },
-  {
-    id: 'opportunity',
-    title: 'AI Opportunity',
-    icon: Zap,
-    borderClass: 'bento-card-opportunity',
-    description: 'Where AI can transform this workflow.',
-    content: (
-      <ul className="space-y-3">
-        <li className="flex items-start gap-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-flame-orange mt-2 shrink-0 shadow-[0_0_8px_rgba(232,93,4,0.6)]" />
-          <span className="text-white/80">Auto-extract data from emails using NLP</span>
-        </li>
-        <li className="flex items-start gap-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-flame-orange mt-2 shrink-0 shadow-[0_0_8px_rgba(232,93,4,0.6)]" />
-          <span className="text-white/80">Smart categorization and formatting</span>
-        </li>
-        <li className="flex items-start gap-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-flame-orange mt-2 shrink-0 shadow-[0_0_8px_rgba(232,93,4,0.6)]" />
-          <span className="text-white/80">Automated report generation</span>
-        </li>
-      </ul>
-    ),
-  },
-  {
-    id: 'next-steps',
-    title: 'Next Steps',
-    icon: ArrowRight,
-    borderClass: 'bento-card-next',
-    description: 'Actionable steps to automate this process.',
-    content: (
-      <div className="space-y-4">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30 shadow-[0_0_15px_rgba(255,186,8,0.1)]">
-          <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shadow-[0_0_10px_rgba(255,186,8,0.3)]">1</span>
-          <span className="text-white/80">Set up email parsing integration</span>
-        </div>
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30 shadow-[0_0_15px_rgba(255,186,8,0.1)]">
-          <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shadow-[0_0_10px_rgba(255,186,8,0.3)]">2</span>
-          <span className="text-white/80">Configure data templates</span>
-        </div>
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30 shadow-[0_0_15px_rgba(255,186,8,0.1)]">
-          <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shadow-[0_0_10px_rgba(255,186,8,0.3)]">3</span>
-          <span className="text-white/80">Deploy automation workflow</span>
-        </div>
-      </div>
-    ),
-  },
-];
+const parseListContent = (text: string | null) => {
+  if (!text) return [];
+  // Split by newlines or bullet points and filter empty lines
+  return text
+    .split(/[\n•\-]/)
+    .map(item => item.trim())
+    .filter(item => item.length > 0);
+};
 
-const Dashboard = ({ onViewChange }: DashboardProps) => {
+const parseSteps = (text: string | null) => {
+  if (!text) return [];
+  // Try to parse numbered steps or split by newlines
+  const steps = text
+    .split(/(?:\d+\.\s*|\n)/)
+    .map(item => item.trim())
+    .filter(item => item.length > 0);
+  return steps.slice(0, 3); // Limit to 3 steps
+};
+
+const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
+  const gapItems = parseListContent(analysisResult?.gap);
+  const automationItems = parseListContent(analysisResult?.automation);
+  const actionSteps = parseSteps(analysisResult?.action);
+
+  const panels = [
+    {
+      id: 'overview',
+      title: 'Overview',
+      icon: Eye,
+      borderClass: 'bento-card-overview',
+      description: analysisResult?.title || 'Your task analysis summary',
+      content: (
+        <div className="space-y-4">
+          <p className="text-white/80 leading-relaxed">
+            {analysisResult?.overview || 'No overview available'}
+          </p>
+          <div className="flex items-center gap-2 pt-2">
+            <span className="px-3 py-1 rounded-full bg-flame-orange/20 text-flame-orange text-sm font-medium">
+              {analysisResult?.domain || 'General'}
+            </span>
+            {analysisResult?.role && (
+              <span className="px-3 py-1 rounded-full bg-white/10 text-white/70 text-sm">
+                {analysisResult.role}
+              </span>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'why-manual',
+      title: 'Why Still Manual?',
+      icon: AlertTriangle,
+      borderClass: 'bento-card-why',
+      description: 'Root causes keeping this process manual.',
+      content: (
+        <ul className="space-y-3">
+          {gapItems.length > 0 ? gapItems.map((item, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-flame-red mt-2 shrink-0 shadow-[0_0_8px_rgba(208,0,0,0.6)]" />
+              <span className="text-white/80">{item}</span>
+            </li>
+          )) : (
+            <li className="text-white/60">No gaps identified</li>
+          )}
+        </ul>
+      ),
+    },
+    {
+      id: 'opportunity',
+      title: 'AI Opportunity',
+      icon: Zap,
+      borderClass: 'bento-card-opportunity',
+      description: 'Where AI can transform this workflow.',
+      content: (
+        <ul className="space-y-3">
+          {automationItems.length > 0 ? automationItems.map((item, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-flame-orange mt-2 shrink-0 shadow-[0_0_8px_rgba(232,93,4,0.6)]" />
+              <span className="text-white/80">{item}</span>
+            </li>
+          )) : (
+            <li className="text-white/60">No automation opportunities identified</li>
+          )}
+        </ul>
+      ),
+    },
+    {
+      id: 'next-steps',
+      title: 'Next Steps',
+      icon: ArrowRight,
+      borderClass: 'bento-card-next',
+      description: 'Actionable steps to automate this process.',
+      content: (
+        <div className="space-y-4">
+          {actionSteps.length > 0 ? actionSteps.map((step, i) => (
+            <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30 shadow-[0_0_15px_rgba(255,186,8,0.1)]">
+              <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shadow-[0_0_10px_rgba(255,186,8,0.3)]">{i + 1}</span>
+              <span className="text-white/80">{step}</span>
+            </div>
+          )) : (
+            <p className="text-white/60">No action steps available</p>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col px-6 py-8 md:py-12 relative">
       {/* Animated Mesh Gradient Background */}

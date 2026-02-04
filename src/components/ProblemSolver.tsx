@@ -5,7 +5,7 @@ import type { ViewType } from '@/types/views';
 
 interface ProblemSolverProps {
   onViewChange: (view: ViewType) => void;
-  onAnalyze: () => void;
+  onAnalyze: (description: string, role: string) => void;
 }
 
 const roles = ['Business Owner', 'Student', 'Founder', 'Developer', 'Other'];
@@ -17,7 +17,7 @@ const ProblemSolver = ({ onViewChange, onAnalyze }: ProblemSolverProps) => {
 
   const handleAnalyze = () => {
     if (description.trim()) {
-      onAnalyze();
+      onAnalyze(description, selectedRole);
     }
   };
 
