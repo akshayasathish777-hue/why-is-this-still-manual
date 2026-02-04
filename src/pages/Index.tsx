@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import LandingPage from '@/components/LandingPage';
 import ProblemSolver from '@/components/ProblemSolver';
 import CuriousBuilder from '@/components/CuriousBuilder';
 import Dashboard from '@/components/Dashboard';
 import LoadingOverlay from '@/components/LoadingOverlay';
+import { analyzeApi, type AnalyzedProblem } from '@/lib/api/analyze';
+import { useToast } from '@/hooks/use-toast';
 import type { ViewType, CuratedProblem } from '@/types/views';
 
-// Mock data for now - will be replaced with Supabase data
+// Mock data for CuriousBuilder - will be replaced with Supabase data
 const mockProblems: CuratedProblem[] = [
   {
     id: '1',
@@ -23,34 +25,6 @@ const mockProblems: CuratedProblem[] = [
     role: 'Social Media Manager',
     upvotes: 189,
   },
-  {
-    id: '3',
-    title: 'Tracking student attendance in paper logs',
-    domain: 'Education',
-    role: 'Teacher',
-    upvotes: 156,
-  },
-  {
-    id: '4',
-    title: 'Compiling weekly sales reports from emails',
-    domain: 'Sales',
-    role: 'Sales Manager',
-    upvotes: 142,
-  },
-  {
-    id: '5',
-    title: 'Manually sorting customer support tickets',
-    domain: 'Support',
-    role: 'Support Lead',
-    upvotes: 128,
-  },
-  {
-    id: '6',
-    title: 'Updating inventory counts by hand',
-    domain: 'Retail',
-    role: 'Store Manager',
-    upvotes: 115,
-  },
 ];
 
 const pageVariants = {
@@ -64,14 +38,39 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [problems] = useState<CuratedProblem[]>(mockProblems);
   const [isProblemsLoading] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalyzedProblem | null>(null);
+  const { toast } = useToast();
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async (description: string, role: string) => {
     setIsLoading(true);
-    // Artificial delay to show loading animation
-    setTimeout(() => {
+    
+    try {
+      // Call the real API
+      const response = await analyzeApi.analyzeProblem(description, 'solver');
+      
+      // Ensure minimum 2.5s loading for cinematic effect
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      
+      if (response.success && response.data && response.data.length > 0) {
+        setAnalysisResult(response.data[0]);
+        setCurrentView('dashboard');
+      } else {
+        toast({
+          title: "Analysis failed",
+          description: response.error || "Could not analyze your workflow. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-      setCurrentView('dashboard');
-    }, 2500);
+    }
   };
 
   const handleViewChange = (view: ViewType) => {
@@ -140,7 +139,7 @@ const Index = () => {
             exit="exit"
             transition={{ duration: 0.3 }}
           >
-            <Dashboard onViewChange={handleViewChange} />
+            <Dashboard onViewChange={handleViewChange} analysisResult={analysisResult} />
           </motion.div>
         )}
       </AnimatePresence>
