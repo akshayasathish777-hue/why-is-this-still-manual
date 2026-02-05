@@ -3,9 +3,13 @@ import { Flame } from 'lucide-react';
 
 interface LoadingOverlayProps {
   message?: string;
+  subMessage?: string;
 }
 
-const LoadingOverlay = ({ message = "Analyzing your workflow..." }: LoadingOverlayProps) => {
+const LoadingOverlay = ({ 
+  message = "Analyzing your workflow...",
+  subMessage = "Currently searching: Reddit"
+}: LoadingOverlayProps) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -41,6 +45,17 @@ const LoadingOverlay = ({ message = "Analyzing your workflow..." }: LoadingOverl
         >
           {message}
         </motion.p>
+        
+        {subMessage && (
+          <motion.p 
+            className="text-white/50 mt-3 text-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            {subMessage}
+          </motion.p>
+        )}
       </motion.div>
       
       {/* Intense ambient glow effect */}

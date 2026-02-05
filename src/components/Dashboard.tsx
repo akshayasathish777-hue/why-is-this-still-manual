@@ -1,11 +1,17 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, Eye, AlertTriangle, Zap, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Eye, AlertTriangle, Zap, ArrowRight, CheckCircle2, ExternalLink } from 'lucide-react';
 import type { ViewType } from '@/types/views';
 import type { AnalyzedProblem } from '@/lib/api/analyze';
+
+interface Source {
+  url: string;
+  title: string;
+}
 
 interface DashboardProps {
   onViewChange: (view: ViewType) => void;
   analysisResult: AnalyzedProblem | null;
+  sources?: Source[];
 }
 
 const parseListContent = (text: string | null) => {
@@ -27,7 +33,7 @@ const parseSteps = (text: string | null) => {
   return steps.slice(0, 3); // Limit to 3 steps
 };
 
-const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
+const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProps) => {
   const gapItems = parseListContent(analysisResult?.gap);
   const automationItems = parseListContent(analysisResult?.automation);
   const actionSteps = parseSteps(analysisResult?.action);
@@ -149,7 +155,7 @@ const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
       </motion.div>
 
       {/* Bento Grid */}
-      <div className="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 relative z-10">
+      <div className="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
         {panels.map((panel, index) => (
           <motion.div
             key={panel.id}
@@ -178,6 +184,49 @@ const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
           </motion.div>
         ))}
       </div>
+
+      {/* Trust Signal */}
+      {(sources.length > 0 || analysisResult?.source_url) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.4 }}
+          className="max-w-6xl mx-auto w-full mt-8 relative z-10"
+        >
+          <div className="glass-card p-4 flex items-center gap-3 flex-wrap">
+            <CheckCircle2 className="w-5 h-5 text-flame-yellow shrink-0" />
+            <span className="text-white/70 text-sm">
+              ✓ Insights grounded in {sources.length || 1} real Reddit discussion{(sources.length || 1) > 1 ? 's' : ''}
+            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {sources.length > 0 ? (
+                sources.slice(0, 3).map((source, i) => (
+                  <a
+                    key={i}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-flame-orange hover:text-flame-yellow text-sm flex items-center gap-1 transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Source {i + 1}
+                  </a>
+                ))
+              ) : analysisResult?.source_url ? (
+                <a
+                  href={analysisResult.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-flame-orange hover:text-flame-yellow text-sm flex items-center gap-1 transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  View source
+                </a>
+              ) : null}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Ambient background glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">

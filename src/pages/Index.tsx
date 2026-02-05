@@ -18,9 +18,11 @@ const pageVariants = {
 const Index = () => {
   const [currentView, setCurrentView] = useState<ViewType>('landing');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Analyzing your workflow...');
   const [problems, setProblems] = useState<CuratedProblem[]>([]);
   const [isProblemsLoading, setIsProblemsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalyzedProblem | null>(null);
+  const [analysisSources, setAnalysisSources] = useState<{ url: string; title: string }[]>([]);
   const { toast } = useToast();
 
   // Fetch problems from database
@@ -76,6 +78,7 @@ const Index = () => {
 
   const handleAnalyze = async (description: string, role: string) => {
     setIsLoading(true);
+    setLoadingMessage('Scanning real discussions...');
     
     try {
       // Call the real API
@@ -86,19 +89,20 @@ const Index = () => {
       
       if (response.success && response.data && response.data.length > 0) {
         setAnalysisResult(response.data[0]);
+        setAnalysisSources(response.sources || []);
         setCurrentView('dashboard');
       } else {
         toast({
-          title: "Analysis failed",
-          description: response.error || "Could not analyze your workflow. Please try again.",
+          title: "No discussions found",
+          description: response.error || "Try different keywords.",
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error('Analysis error:', error);
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
+        title: "Analysis timed out",
+        description: "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -113,7 +117,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <AnimatePresence mode="wait">
-        {isLoading && <LoadingOverlay key="loading" />}
+        {isLoading && (
+          <LoadingOverlay 
+            key="loading" 
+            message={loadingMessage}
+            subMessage="Currently searching: Reddit"
+          />
+        )}
       </AnimatePresence>
 
       <AnimatePresence mode="wait">
@@ -177,7 +187,11 @@ const Index = () => {
             exit="exit"
             transition={{ duration: 0.3 }}
           >
-            <Dashboard onViewChange={handleViewChange} analysisResult={analysisResult} />
+            <Dashboard 
+              onViewChange={handleViewChange} 
+              analysisResult={analysisResult}
+              sources={analysisSources}
+            />
           </motion.div>
         )}
       </AnimatePresence>
