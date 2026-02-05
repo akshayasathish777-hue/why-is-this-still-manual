@@ -11,10 +11,10 @@ interface CuriousBuilderProps {
   onSelectProblem: (problem: CuratedProblem) => void;
 }
 
-const sourceFilters: { id: SourceFilter; label: string }[] = [
-  { id: 'all', label: 'All Problems' },
-  { id: 'reddit', label: 'Reddit' },
-  { id: 'app-reviews', label: 'App Reviews' },
+const sourceFilters: { id: SourceFilter; label: string; active: boolean }[] = [
+  { id: 'all', label: 'All Problems', active: true },
+  { id: 'reddit', label: 'Reddit', active: true },
+  { id: 'app-reviews', label: 'Twitter/X (soon)', active: false },
 ];
 
 const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems, onSelectProblem }: CuriousBuilderProps) => {
@@ -101,17 +101,25 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
           </button>
         </div>
 
-        {/* Source Toggle Pills */}
-        <div className="flex items-center justify-center gap-3 flex-wrap">
-          {sourceFilters.map((source) => (
-            <button
-              key={source.id}
-              onClick={() => setActiveSource(source.id)}
-              className={`pill-toggle ${activeSource === source.id ? 'pill-toggle-active' : ''}`}
-            >
-              {source.label}
-            </button>
-          ))}
+        {/* Source Toggle Pills + Status */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap justify-center">
+            {sourceFilters.map((source) => (
+              <button
+                key={source.id}
+                onClick={() => source.active && setActiveSource(source.id)}
+                disabled={!source.active}
+                className={`pill-toggle ${activeSource === source.id ? 'pill-toggle-active' : ''} ${
+                  !source.active ? 'opacity-40 cursor-not-allowed' : ''
+                }`}
+              >
+                {source.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-white/40 text-xs">
+            Currently searching: <span className="text-flame-orange">Reddit</span>
+          </p>
         </div>
       </motion.div>
 

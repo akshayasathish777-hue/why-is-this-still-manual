@@ -69,8 +69,17 @@ Deno.serve(async (req) => {
 
     console.log(`[analyze-problem] Starting analysis for query: "${query}" in mode: ${mode}`);
 
-    // Step 1: Search Reddit via Firecrawl
+    // Step 1: Search Reddit via Firecrawl with high-friction phrase detection
     console.log("[analyze-problem] Step 1: Searching Reddit via Firecrawl...");
+    
+    // Build search query with high-friction phrases for better signal
+    const highFrictionPhrases = mode === "solver"
+      ? `"I wish there was" OR "how do I automate" OR "is there a tool"`
+      : `("I wish" OR "automate" OR "tool for" OR "still manual" OR "why is there no")`;
+    
+    const searchQuery = `site:reddit.com ${query} ${highFrictionPhrases}`;
+    console.log(`[analyze-problem] Search query: ${searchQuery}`);
+    
     const firecrawlResponse = await fetch("https://api.firecrawl.dev/v1/search", {
       method: "POST",
       headers: {
@@ -78,8 +87,8 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        query: `site:reddit.com ${query} manual workflow problem frustrating`,
-        limit: 5,
+        query: searchQuery,
+        limit: mode === "builder" ? 7 : 5,
         scrapeOptions: {
           formats: ["markdown"],
         },
