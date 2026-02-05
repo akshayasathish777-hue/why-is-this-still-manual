@@ -1,17 +1,12 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft, Eye, AlertTriangle, Zap, ArrowRight, CheckCircle2, ExternalLink } from 'lucide-react';
 import type { ViewType } from '@/types/views';
-import type { AnalyzedProblem } from '@/lib/api/analyze';
-
-interface Source {
-  url: string;
-  title: string;
-}
+import type { AnalyzedProblem, AnalysisSource } from '@/lib/api/analyze';
 
 interface DashboardProps {
   onViewChange: (view: ViewType) => void;
   analysisResult: AnalyzedProblem | null;
-  sources?: Source[];
+  sources?: AnalysisSource[];
 }
 
 const parseListContent = (text: string | null) => {
@@ -33,10 +28,22 @@ const parseSteps = (text: string | null) => {
   return steps.slice(0, 3); // Limit to 3 steps
 };
 
+const formatSourceName = (source?: string): string => {
+  if (!source) return 'Reddit';
+  if (source === 'twitter') return 'Twitter/X';
+  return source.charAt(0).toUpperCase() + source.slice(1);
+};
+
 const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProps) => {
   const gapItems = parseListContent(analysisResult?.gap);
   const automationItems = parseListContent(analysisResult?.automation);
   const actionSteps = parseSteps(analysisResult?.action);
+
+  // Count unique sources
+  const uniqueSources = [...new Set(sources.map(s => s.source || 'reddit'))];
+  const sourceCountText = sources.length > 0 
+    ? `${sources.length} real discussion${sources.length > 1 ? 's' : ''} from ${uniqueSources.map(formatSourceName).join(', ')}`
+    : '1 real Reddit discussion';
 
   const panels = [
     {
@@ -196,11 +203,11 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
           <div className="glass-card p-4 flex items-center gap-3 flex-wrap">
             <CheckCircle2 className="w-5 h-5 text-flame-yellow shrink-0" />
             <span className="text-white/70 text-sm">
-              ✓ Insights grounded in {sources.length || 1} real Reddit discussion{(sources.length || 1) > 1 ? 's' : ''}
+              ✓ Insights grounded in {sourceCountText}
             </span>
             <div className="flex items-center gap-2 flex-wrap">
               {sources.length > 0 ? (
-                sources.slice(0, 3).map((source, i) => (
+                sources.slice(0, 5).map((source, i) => (
                   <a
                     key={i}
                     href={source.url}
@@ -209,7 +216,7 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
                     className="text-flame-orange hover:text-flame-yellow text-sm flex items-center gap-1 transition-colors"
                   >
                     <ExternalLink className="w-3 h-3" />
-                    Source {i + 1}
+                    {formatSourceName(source.source)} {i + 1}
                   </a>
                 ))
               ) : analysisResult?.source_url ? (

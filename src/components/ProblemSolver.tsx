@@ -1,23 +1,44 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Flame, ChevronDown } from 'lucide-react';
-import type { ViewType } from '@/types/views';
+import type { ViewType, SourceType } from '@/types/views';
 
 interface ProblemSolverProps {
   onViewChange: (view: ViewType) => void;
-  onAnalyze: (description: string, role: string) => void;
+  onAnalyze: (description: string, role: string, sources: SourceType[]) => void;
 }
 
 const roles = ['Business Owner', 'Student', 'Founder', 'Developer', 'Other'];
+
+const sourceOptions: { id: SourceType; label: string }[] = [
+  { id: 'reddit', label: 'Reddit' },
+  { id: 'twitter', label: 'Twitter/X' },
+  { id: 'quora', label: 'Quora' },
+];
 
 const ProblemSolver = ({ onViewChange, onAnalyze }: ProblemSolverProps) => {
   const [description, setDescription] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedSources, setSelectedSources] = useState<SourceType[]>(['reddit']);
+
+  const toggleSource = (source: SourceType) => {
+    setSelectedSources((prev) => {
+      // If it's the only selected source, don't deselect it
+      if (prev.length === 1 && prev.includes(source)) {
+        return prev;
+      }
+      // Toggle the source
+      if (prev.includes(source)) {
+        return prev.filter((s) => s !== source);
+      }
+      return [...prev, source];
+    });
+  };
 
   const handleAnalyze = () => {
     if (description.trim()) {
-      onAnalyze(description, selectedRole);
+      onAnalyze(description, selectedRole, selectedSources);
     }
   };
 
@@ -112,6 +133,31 @@ For example: Every morning I spend 30 minutes copying data from emails into a sp
             )}
           </div>
 
+          {/* Source Selection */}
+          <div className="glass-card p-4">
+            <label className="text-flame-yellow text-sm font-medium mb-3 block">
+              Search in (select at least one):
+            </label>
+            <div className="flex items-center gap-3 flex-wrap">
+              {sourceOptions.map((source) => {
+                const isActive = selectedSources.includes(source.id);
+                return (
+                  <button
+                    key={source.id}
+                    onClick={() => toggleSource(source.id)}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-flame-orange to-flame-yellow text-white'
+                        : 'bg-flame-yellow/10 text-flame-yellow border border-flame-yellow/30 hover:bg-flame-yellow/20'
+                    }`}
+                  >
+                    {source.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* CTA Button with Gradient and Pulse */}
           <motion.button
             onClick={handleAnalyze}
@@ -125,7 +171,7 @@ For example: Every morning I spend 30 minutes copying data from emails into a sp
             }`}
           >
             <Flame className={`w-5 h-5 ${description.trim() ? 'flame-bloom' : ''}`} />
-            Analyze My Process
+            Validate & Unlock
           </motion.button>
         </motion.div>
       </div>
