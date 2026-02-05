@@ -5,9 +5,9 @@ import ProblemSolver from '@/components/ProblemSolver';
 import CuriousBuilder from '@/components/CuriousBuilder';
 import Dashboard from '@/components/Dashboard';
 import LoadingOverlay from '@/components/LoadingOverlay';
-import { analyzeApi, type AnalyzedProblem } from '@/lib/api/analyze';
+import { analyzeApi, type AnalyzedProblem, type AnalysisSource } from '@/lib/api/analyze';
 import { useToast } from '@/hooks/use-toast';
-import type { ViewType, CuratedProblem } from '@/types/views';
+import type { ViewType, CuratedProblem, SourceType } from '@/types/views';
 
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
@@ -19,10 +19,11 @@ const Index = () => {
   const [currentView, setCurrentView] = useState<ViewType>('landing');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Analyzing your workflow...');
+  const [loadingSubMessage, setLoadingSubMessage] = useState('');
   const [problems, setProblems] = useState<CuratedProblem[]>([]);
   const [isProblemsLoading, setIsProblemsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalyzedProblem | null>(null);
-  const [analysisSources, setAnalysisSources] = useState<{ url: string; title: string }[]>([]);
+  const [analysisSources, setAnalysisSources] = useState<AnalysisSource[]>([]);
   const { toast } = useToast();
 
   // Fetch problems from database
@@ -45,11 +46,19 @@ const Index = () => {
     }
   }, [currentView, fetchProblems]);
 
+  // Format source names for display
+  const formatSourceNames = (sources: SourceType[]): string => {
+    return sources.map(s => {
+      if (s === 'twitter') return 'Twitter/X';
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    }).join(', ');
+  };
+
   // Discover new problems in builder mode
-  const handleDiscoverProblems = async (query: string) => {
+  const handleDiscoverProblems = async (query: string, sources: SourceType[]) => {
     setIsProblemsLoading(true);
     try {
-      const response = await analyzeApi.analyzeProblem(query, 'builder');
+      const response = await analyzeApi.analyzeProblem(query, 'builder', sources);
       if (response.success && response.data) {
         // Refresh the list after discovering new problems
         await fetchProblems();
@@ -76,13 +85,15 @@ const Index = () => {
     }
   };
 
-  const handleAnalyze = async (description: string, role: string) => {
+  const handleAnalyze = async (description: string, role: string, sources: SourceType[]) => {
     setIsLoading(true);
-    setLoadingMessage('Scanning real discussions...');
+    const sourceNames = formatSourceNames(sources);
+    setLoadingMessage(`Scanning ${sourceNames} discussions...`);
+    setLoadingSubMessage(`Currently searching: ${sourceNames}`);
     
     try {
-      // Call the real API
-      const response = await analyzeApi.analyzeProblem(description, 'solver');
+      // Call the real API with selected sources
+      const response = await analyzeApi.analyzeProblem(description, 'solver', sources);
       
       // Ensure minimum 2.5s loading for cinematic effect
       await new Promise(resolve => setTimeout(resolve, 2500));
@@ -121,7 +132,7 @@ const Index = () => {
           <LoadingOverlay 
             key="loading" 
             message={loadingMessage}
-            subMessage="Currently searching: Reddit"
+            subMessage={loadingSubMessage}
           />
         )}
       </AnimatePresence>

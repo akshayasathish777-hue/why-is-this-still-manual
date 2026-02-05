@@ -1,25 +1,46 @@
 import { useState, KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Search, Sparkles, ExternalLink } from 'lucide-react';
-import type { ViewType, SourceFilter, CuratedProblem } from '@/types/views';
+import { ArrowLeft, Search, Sparkles, ExternalLink, Download } from 'lucide-react';
+import type { ViewType, SourceFilter, SourceType, CuratedProblem } from '@/types/views';
+import { exportProblemsAsJSON, exportProblemsAsCSV } from '@/lib/api/analyze';
 
 interface CuriousBuilderProps {
   onViewChange: (view: ViewType) => void;
   problems: CuratedProblem[];
   isLoading: boolean;
-  onDiscoverProblems: (query: string) => Promise<void>;
+  onDiscoverProblems: (query: string, sources: SourceType[]) => Promise<void>;
   onSelectProblem: (problem: CuratedProblem) => void;
 }
 
-const sourceFilters: { id: SourceFilter; label: string; active: boolean }[] = [
-  { id: 'all', label: 'All Problems', active: true },
-  { id: 'reddit', label: 'Reddit', active: true },
-  { id: 'app-reviews', label: 'Twitter/X (soon)', active: false },
+const sourceOptions: { id: SourceType; label: string }[] = [
+  { id: 'reddit', label: 'Reddit' },
+  { id: 'twitter', label: 'Twitter/X' },
+  { id: 'quora', label: 'Quora' },
+];
+
+const filterOptions: { id: SourceFilter; label: string }[] = [
+  { id: 'all', label: 'All Sources' },
+  { id: 'reddit', label: 'Reddit' },
+  { id: 'twitter', label: 'Twitter/X' },
+  { id: 'quora', label: 'Quora' },
 ];
 
 const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems, onSelectProblem }: CuriousBuilderProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSource, setActiveSource] = useState<SourceFilter>('all');
+  const [selectedSearchSources, setSelectedSearchSources] = useState<SourceType[]>(['reddit']);
+
+  const toggleSearchSource = (source: SourceType) => {
+    setSelectedSearchSources((prev) => {
+      if (prev.length === 1 && prev.includes(source)) {
+        return prev;
+      }
+      if (prev.includes(source)) {
+        return prev.filter((s) => s !== source);
+      }
+      return [...prev, source];
+    });
+  };
 
   const filteredProblems = problems.filter(problem => {
     const matchesSearch = problem.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -30,7 +51,7 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
-      onDiscoverProblems(searchQuery.trim());
+      onDiscoverProblems(searchQuery.trim(), selectedSearchSources);
     }
   };
 
@@ -72,7 +93,7 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
         </p>
       </motion.div>
 
-      {/* Search & Filters */}
+      {/* Search & Controls */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -101,24 +122,72 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
           </button>
         </div>
 
-        {/* Source Toggle Pills + Status */}
+        {/* Source Selection for Search */}
+        <div className="glass-card p-4">
+          <label className="text-flame-yellow text-sm font-medium mb-3 block">
+            Search in (select at least one):
+          </label>
+          <div className="flex items-center gap-3 flex-wrap">
+            {sourceOptions.map((source) => {
+              const isActive = selectedSearchSources.includes(source.id);
+              return (
+                <button
+                  key={source.id}
+                  onClick={() => toggleSearchSource(source.id)}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-flame-orange to-flame-yellow text-white'
+                      : 'bg-flame-yellow/10 text-flame-yellow border border-flame-yellow/30 hover:bg-flame-yellow/20'
+                  }`}
+                >
+                  {source.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Filter Pills + Export Buttons */}
         <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-3 flex-wrap justify-center">
-            {sourceFilters.map((source) => (
-              <button
-                key={source.id}
-                onClick={() => source.active && setActiveSource(source.id)}
-                disabled={!source.active}
-                className={`pill-toggle ${activeSource === source.id ? 'pill-toggle-active' : ''} ${
-                  !source.active ? 'opacity-40 cursor-not-allowed' : ''
-                }`}
-              >
-                {source.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-3 flex-wrap justify-center w-full">
+            <div className="flex items-center gap-3 flex-wrap justify-center flex-1">
+              {filterOptions.map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => setActiveSource(filter.id)}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                    activeSource === filter.id
+                      ? 'bg-gradient-to-r from-flame-orange to-flame-yellow text-white'
+                      : 'bg-flame-yellow/10 text-flame-yellow border border-flame-yellow/30 hover:bg-flame-yellow/20'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+            
+            {/* Export Buttons */}
+            {filteredProblems.length > 0 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => exportProblemsAsJSON(filteredProblems)}
+                  className="px-3 py-2 rounded-lg text-sm flex items-center gap-2 bg-flame-yellow/10 text-flame-yellow border border-flame-yellow/30 hover:bg-flame-yellow/20 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">JSON</span>
+                </button>
+                <button
+                  onClick={() => exportProblemsAsCSV(filteredProblems)}
+                  className="px-3 py-2 rounded-lg text-sm flex items-center gap-2 bg-flame-yellow/10 text-flame-yellow border border-flame-yellow/30 hover:bg-flame-yellow/20 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">CSV</span>
+                </button>
+              </div>
+            )}
           </div>
           <p className="text-white/40 text-xs">
-            Currently searching: <span className="text-flame-orange">Reddit</span>
+            Currently searching: <span className="text-flame-orange">{selectedSearchSources.map(s => s === 'twitter' ? 'Twitter/X' : s.charAt(0).toUpperCase() + s.slice(1)).join(', ')}</span>
           </p>
         </div>
       </motion.div>
@@ -185,7 +254,7 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
                   )}
                   {problem.source_type && (
                     <span className="text-white/30 text-xs capitalize">
-                      via {problem.source_type}
+                      via {problem.source_type === 'twitter' ? 'Twitter/X' : problem.source_type}
                     </span>
                   )}
                 </div>
@@ -199,7 +268,7 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
             className="text-center py-16"
           >
             <p className="text-white/50 text-lg">
-              {searchQuery ? 'No problems found matching your search' : 'No problems available yet'}
+              {searchQuery ? 'No problems found matching your search' : 'No problems available yet. Enter a topic and click Discover!'}
             </p>
           </motion.div>
         )}

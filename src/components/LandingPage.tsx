@@ -11,15 +11,21 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
     {
       icon: Puzzle,
       title: "I Have a Problem",
-      subtitle: "Analyze my manual task",
+      subtitle: "Validate my struggle + see the unlock",
       view: 'solver' as ViewType,
     },
     {
       icon: Rocket,
       title: "I Want to Build Something",
-      subtitle: "Explore real-world problems",
+      subtitle: "Discover what people are begging for",
       view: 'builder' as ViewType,
     },
+  ];
+
+  const sourceBadges = [
+    { name: 'Reddit', active: true },
+    { name: 'Twitter/X', active: true },
+    { name: 'Quora', active: true },
   ];
 
   return (
@@ -89,6 +95,31 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
           </motion.button>
         ))}
       </div>
+
+      {/* Multi-source indicator */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        className="mt-10 text-center relative z-10"
+      >
+        <p className="text-white/50 text-sm mb-3">Searching across multiple sources:</p>
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          {sourceBadges.map((badge) => (
+            <span
+              key={badge.name}
+              className="px-3 py-1 rounded-full text-xs font-medium border"
+              style={{
+                backgroundColor: 'rgba(232, 93, 4, 0.2)',
+                color: '#e85d04',
+                borderColor: '#e85d04',
+              }}
+            >
+              {badge.name}
+            </span>
+          ))}
+        </div>
+      </motion.div>
 
       {/* Ambient background glow elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
