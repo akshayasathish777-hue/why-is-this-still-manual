@@ -1,8 +1,10 @@
 import { useState, KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Search, Sparkles, ExternalLink, Download } from 'lucide-react';
+import { ArrowLeft, Search, Sparkles, ExternalLink, Download, Bookmark } from 'lucide-react';
 import type { ViewType, SourceFilter, SourceType, CuratedProblem } from '@/types/views';
+import type { User } from '@supabase/supabase-js';
 import { exportProblemsAsJSON, exportProblemsAsCSV } from '@/lib/api/analyze';
+import SubredditRecommendations from './SubredditRecommendations';
 
 interface CuriousBuilderProps {
   onViewChange: (view: ViewType) => void;
@@ -10,6 +12,8 @@ interface CuriousBuilderProps {
   isLoading: boolean;
   onDiscoverProblems: (query: string, sources: SourceType[]) => Promise<void>;
   onSelectProblem: (problem: CuratedProblem) => void;
+  onSaveSearch?: (query: string, sources: SourceType[]) => void;
+  user?: User | null;
 }
 
 const sourceOptions: { id: SourceType; label: string }[] = [
@@ -25,7 +29,7 @@ const filterOptions: { id: SourceFilter; label: string }[] = [
   { id: 'quora', label: 'Quora' },
 ];
 
-const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems, onSelectProblem }: CuriousBuilderProps) => {
+const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems, onSelectProblem, onSaveSearch, user }: CuriousBuilderProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSource, setActiveSource] = useState<SourceFilter>('all');
   const [selectedSearchSources, setSelectedSearchSources] = useState<SourceType[]>(['reddit']);
@@ -120,6 +124,16 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
             <Sparkles className="w-4 h-4" />
             <span className="hidden sm:inline">Discover</span>
           </button>
+          {/* Save Search Button */}
+          {searchQuery.trim() && onSaveSearch && (
+            <button
+              onClick={() => onSaveSearch(searchQuery.trim(), selectedSearchSources)}
+              className="px-3 py-2 rounded-lg text-sm flex items-center gap-2 bg-flame-yellow/10 text-flame-yellow border border-flame-yellow/30 hover:bg-flame-yellow/20 transition-colors"
+              title="Save this search"
+            >
+              <Bookmark className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Source Selection for Search */}
@@ -271,6 +285,13 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
               {searchQuery ? 'No problems found matching your search' : 'No problems available yet. Enter a topic and click Discover!'}
             </p>
           </motion.div>
+        )}
+
+        {/* Subreddit Recommendations */}
+        {filteredProblems.length > 0 && (
+          <div className="mt-8">
+            <SubredditRecommendations problems={filteredProblems} />
+          </div>
         )}
       </div>
 

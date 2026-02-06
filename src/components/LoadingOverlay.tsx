@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Flame } from 'lucide-react';
+import Logo from './Logo';
+import logoImage from '@/assets/logo.png';
 
 interface LoadingOverlayProps {
   message?: string;
@@ -28,9 +29,10 @@ const LoadingOverlay = ({
         }}
         className="flex flex-col items-center"
       >
-        <Flame 
-          size={80} 
-          className="text-flame-yellow flame-bloom-intense animate-pulse-fire" 
+        <img 
+          src={logoImage}
+          alt="Loading"
+          className="w-20 h-20 object-contain filter drop-shadow-[0_0_30px_rgba(255,186,8,0.6)]"
         />
         <motion.p 
           className="headline-fire mt-6 font-medium text-xl"

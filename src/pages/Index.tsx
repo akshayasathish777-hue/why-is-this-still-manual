@@ -5,9 +5,16 @@ import ProblemSolver from '@/components/ProblemSolver';
 import CuriousBuilder from '@/components/CuriousBuilder';
 import Dashboard from '@/components/Dashboard';
 import LoadingOverlay from '@/components/LoadingOverlay';
+import NavLogo from '@/components/NavLogo';
+import UserMenu from '@/components/UserMenu';
+import AuthModal from '@/components/AuthModal';
+import SavedSearches from '@/components/SavedSearches';
 import { analyzeApi, type AnalyzedProblem, type AnalysisSource } from '@/lib/api/analyze';
+import { savedSearchesApi } from '@/lib/api/savedSearches';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { ViewType, CuratedProblem, SourceType } from '@/types/views';
+import type { User } from '@supabase/supabase-js';
 
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
@@ -15,8 +22,10 @@ const pageVariants = {
   exit: { opacity: 0, y: -20 },
 };
 
+type AppView = ViewType | 'savedSearches' | 'emailPreferences';
+
 const Index = () => {
-  const [currentView, setCurrentView] = useState<ViewType>('landing');
+  const [currentView, setCurrentView] = useState<AppView>('landing');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Analyzing your workflow...');
   const [loadingSubMessage, setLoadingSubMessage] = useState('');
@@ -24,7 +33,23 @@ const Index = () => {
   const [isProblemsLoading, setIsProblemsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalyzedProblem | null>(null);
   const [analysisSources, setAnalysisSources] = useState<AnalysisSource[]>([]);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const { toast } = useToast();
+
+  // Auth state listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Fetch problems from database
   const fetchProblems = useCallback(async () => {
@@ -54,13 +79,56 @@ const Index = () => {
     }).join(', ');
   };
 
+  // Require auth wrapper
+  const requireAuth = (action: () => void) => {
+    if (user) {
+      action();
+    } else {
+      setPendingAction(() => action);
+      setShowAuthModal(true);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    if (pendingAction) {
+      pendingAction();
+      setPendingAction(null);
+    }
+  };
+
+  // Save search handler
+  const handleSaveSearch = async (
+    query: string,
+    sources: SourceType[],
+    searchType: 'solver' | 'builder'
+  ) => {
+    requireAuth(async () => {
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) return;
+
+        await savedSearchesApi.save(currentUser.id, searchType, query, sources);
+        toast({
+          title: 'Search saved!',
+          description: 'You can access it from your profile menu.',
+        });
+      } catch (error) {
+        console.error('Save search error:', error);
+        toast({
+          title: 'Failed to save',
+          description: 'Could not save this search.',
+          variant: 'destructive',
+        });
+      }
+    });
+  };
+
   // Discover new problems in builder mode
   const handleDiscoverProblems = async (query: string, sources: SourceType[]) => {
     setIsProblemsLoading(true);
     try {
       const response = await analyzeApi.analyzeProblem(query, 'builder', sources);
       if (response.success && response.data) {
-        // Refresh the list after discovering new problems
         await fetchProblems();
         toast({
           title: "Problems discovered!",
@@ -92,7 +160,6 @@ const Index = () => {
     setLoadingSubMessage(`Currently searching: ${sourceNames}`);
     
     try {
-      // Call the real API with selected sources
       const response = await analyzeApi.analyzeProblem(description, 'solver', sources);
       
       // Ensure minimum 2.5s loading for cinematic effect
@@ -125,8 +192,51 @@ const Index = () => {
     setCurrentView(view);
   };
 
+  const handleRunSavedSearch = (query: string, sources: SourceType[], searchType: 'solver' | 'builder') => {
+    if (searchType === 'solver') {
+      setCurrentView('solver');
+      // The solver component will handle the actual search
+    } else {
+      setCurrentView('builder');
+      handleDiscoverProblems(query, sources);
+    }
+  };
+
+  const showNavLogo = currentView !== 'landing';
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Nav Logo - shows on all pages except landing */}
+      {showNavLogo && (
+        <NavLogo onClick={() => setCurrentView('landing')} />
+      )}
+
+      {/* User Menu - shows when logged in */}
+      {user && currentView !== 'savedSearches' && currentView !== 'emailPreferences' && (
+        <div className="fixed top-5 right-5 z-[1000]">
+          <UserMenu
+            onShowSavedSearches={() => setCurrentView('savedSearches')}
+            onShowEmailPreferences={() => {
+              toast({
+                title: 'Email Preferences',
+                description: 'Coming soon! Manage your alert settings.',
+              });
+            }}
+          />
+        </div>
+      )}
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => {
+          setShowAuthModal(false);
+          setPendingAction(null);
+        }}
+        onSuccess={handleAuthSuccess}
+      />
+
+      {/* Loading Overlay */}
       <AnimatePresence mode="wait">
         {isLoading && (
           <LoadingOverlay 
@@ -137,6 +247,7 @@ const Index = () => {
         )}
       </AnimatePresence>
 
+      {/* Main Content */}
       <AnimatePresence mode="wait">
         {currentView === 'landing' && (
           <motion.div
@@ -185,6 +296,8 @@ const Index = () => {
                 setAnalysisResult(problem as AnalyzedProblem);
                 setCurrentView('dashboard');
               }}
+              onSaveSearch={(query, sources) => handleSaveSearch(query, sources, 'builder')}
+              user={user}
             />
           </motion.div>
         )}
@@ -202,6 +315,22 @@ const Index = () => {
               onViewChange={handleViewChange} 
               analysisResult={analysisResult}
               sources={analysisSources}
+            />
+          </motion.div>
+        )}
+
+        {currentView === 'savedSearches' && (
+          <motion.div
+            key="savedSearches"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.3 }}
+          >
+            <SavedSearches
+              onBack={() => setCurrentView('landing')}
+              onRunSearch={handleRunSavedSearch}
             />
           </motion.div>
         )}
