@@ -25,6 +25,7 @@ export type Database = {
           overview: string | null
           role: string | null
           search_query: string | null
+          sentiment: Json | null
           source_type: string | null
           source_url: string | null
           title: string
@@ -39,6 +40,7 @@ export type Database = {
           overview?: string | null
           role?: string | null
           search_query?: string | null
+          sentiment?: Json | null
           source_type?: string | null
           source_url?: string | null
           title: string
@@ -53,9 +55,46 @@ export type Database = {
           overview?: string | null
           role?: string | null
           search_query?: string | null
+          sentiment?: Json | null
           source_type?: string | null
           source_url?: string | null
           title?: string
+        }
+        Relationships: []
+      }
+      saved_searches: {
+        Row: {
+          alert_enabled: boolean | null
+          alert_frequency: string | null
+          created_at: string | null
+          id: string
+          last_run_at: string | null
+          query: string
+          search_type: string
+          sources: Json
+          user_id: string
+        }
+        Insert: {
+          alert_enabled?: boolean | null
+          alert_frequency?: string | null
+          created_at?: string | null
+          id?: string
+          last_run_at?: string | null
+          query: string
+          search_type: string
+          sources?: Json
+          user_id: string
+        }
+        Update: {
+          alert_enabled?: boolean | null
+          alert_frequency?: string | null
+          created_at?: string | null
+          id?: string
+          last_run_at?: string | null
+          query?: string
+          search_type?: string
+          sources?: Json
+          user_id?: string
         }
         Relationships: []
       }

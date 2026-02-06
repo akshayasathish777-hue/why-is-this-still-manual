@@ -1,6 +1,11 @@
 import { motion } from 'framer-motion';
-import { Puzzle, Rocket, Flame } from 'lucide-react';
+import { Puzzle, Rocket, ArrowRight } from 'lucide-react';
 import type { ViewType } from '@/types/views';
+import Logo from './Logo';
+import RotatingCatchphrase from './RotatingCatchphrase';
+import SocialProofBar from './SocialProofBar';
+import FeatureGrid from './FeatureGrid';
+import LiveSourceBadges from './LiveSourceBadges';
 
 interface LandingPageProps {
   onViewChange: (view: ViewType) => void;
@@ -9,12 +14,14 @@ interface LandingPageProps {
 const LandingPage = ({ onViewChange }: LandingPageProps) => {
   const cards = [
     {
+      number: '01',
       icon: Puzzle,
       title: "I Have a Problem",
       subtitle: "Validate my struggle + see the unlock",
       view: 'solver' as ViewType,
     },
     {
+      number: '02',
       icon: Rocket,
       title: "I Want to Build Something",
       subtitle: "Discover what people are begging for",
@@ -22,14 +29,8 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
     },
   ];
 
-  const sourceBadges = [
-    { name: 'Reddit', active: true },
-    { name: 'Twitter/X', active: true },
-    { name: 'Quora', active: true },
-  ];
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative">
+    <div className="min-h-screen flex flex-col items-center px-6 py-12 relative overflow-x-hidden">
       {/* Animated Mesh Gradient Background */}
       <div className="mesh-gradient-bg" />
 
@@ -38,41 +39,82 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="text-center mb-12 relative z-10"
+        className="text-center mb-8 relative z-10 max-w-5xl mx-auto"
       >
+        {/* Logo */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="inline-flex items-center gap-2 mb-6"
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="flex justify-center mb-8"
         >
-          <Flame className="w-10 h-10 text-flame-yellow flame-bloom" />
+          <Logo size="lg" animate />
         </motion.div>
         
-        <h1 className="headline-fire text-4xl md:text-6xl lg:text-7xl mb-4">
+        {/* Main Headline */}
+        <motion.h1 
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 tracking-tight"
+          style={{
+            color: '#ffba08',
+            textShadow: '0 0 20px #ffba08, 0 0 40px #e85d04',
+            letterSpacing: '-0.02em',
+          }}
+        >
           Why Is This Still Manual?
-        </h1>
-        <p className="text-white/80 text-lg md:text-xl max-w-2xl mx-auto">
-          Discover automation opportunities hiding in your daily workflows
-        </p>
+        </motion.h1>
+
+        {/* Rotating Catchphrase */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+        >
+          <RotatingCatchphrase />
+        </motion.div>
+
+        {/* Subheadline */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="text-white/50 text-base md:text-lg mt-4"
+        >
+          AI-Powered Problem Discovery • Multi-Source Intelligence • Built for Builders
+        </motion.p>
       </motion.div>
 
       {/* Choice Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl relative z-10">
+      <motion.div 
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.5 }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl relative z-10 mb-12"
+      >
         {cards.map((card, index) => (
           <motion.button
             key={card.view}
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 + index * 0.1, duration: 0.5 }}
+            transition={{ delay: 0.6 + index * 0.1, duration: 0.5 }}
             whileHover={{ 
-              y: -8, 
-              scale: 1.01,
+              y: -12, 
+              scale: 1.02,
+              rotateY: 2,
+              rotateX: 2,
             }}
             whileTap={{ scale: 0.97 }}
             onClick={() => onViewChange(card.view)}
             className="glass-card card-interactive p-8 md:p-10 text-left group cursor-pointer relative overflow-hidden"
+            style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}
           >
+            {/* Number badge */}
+            <span className="absolute top-4 left-4 text-flame-yellow/30 text-sm font-bold">
+              {card.number}
+            </span>
+
             {/* Hover glow effect */}
             <div className="absolute inset-0 bg-gradient-to-br from-flame-orange/0 to-flame-orange/0 group-hover:from-flame-orange/10 group-hover:to-transparent transition-all duration-500" />
             
@@ -90,36 +132,31 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
               </p>
             </div>
 
+            {/* Arrow on hover */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <ArrowRight className="w-6 h-6 text-flame-yellow" />
+            </div>
+
             {/* Corner accent glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-flame-orange/20 to-transparent rounded-bl-[80px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
           </motion.button>
         ))}
+      </motion.div>
+
+      {/* Social Proof Bar */}
+      <div className="w-full max-w-4xl relative z-10 mb-12">
+        <SocialProofBar />
       </div>
 
-      {/* Multi-source indicator */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-        className="mt-10 text-center relative z-10"
-      >
-        <p className="text-white/50 text-sm mb-3">Searching across multiple sources:</p>
-        <div className="flex items-center justify-center gap-3 flex-wrap">
-          {sourceBadges.map((badge) => (
-            <span
-              key={badge.name}
-              className="px-3 py-1 rounded-full text-xs font-medium border"
-              style={{
-                backgroundColor: 'rgba(232, 93, 4, 0.2)',
-                color: '#e85d04',
-                borderColor: '#e85d04',
-              }}
-            >
-              {badge.name}
-            </span>
-          ))}
-        </div>
-      </motion.div>
+      {/* Feature Grid */}
+      <div className="w-full relative z-10 mb-12">
+        <FeatureGrid />
+      </div>
+
+      {/* Live Source Badges */}
+      <div className="relative z-10 mb-8">
+        <LiveSourceBadges />
+      </div>
 
       {/* Ambient background glow elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
