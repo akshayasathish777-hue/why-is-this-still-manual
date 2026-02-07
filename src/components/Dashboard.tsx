@@ -11,75 +11,65 @@ interface DashboardProps {
 }
 
 const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProps) => {
-  const [showFullPlan, setShowFullPlan] = useState(false);
+const [showFullPlan, setShowFullPlan] = useState(false);
 
-  // Parse text into bullet points
-  const parseBulletPoints = (text: string | null): string[] => {
-    if (!text) return [];
-    
-    // Split by common bullet patterns: **, •, -, newline followed by capital letter
-    const bullets = text
-      .split(/\*\*|\n•|\n-|\n(?=[A-Z])/)
-      .map(item => item.trim())
-      .filter(item => item.length > 0)
-      // Remove ** markdown if present
-      .map(item => item.replace(/\*\*/g, '').trim())
-      .filter(item => item.length > 0);
-    
-    return bullets;
-  };
+// ADD THESE PARSING FUNCTIONS HERE:
+const parseBulletPoints = (text: string | null): string[] => {
+  if (!text) return [];
+  
+  const bullets = text
+    .split(/\*\*|\n•|\n-|\n(?=[A-Z])/)
+    .map(item => item.trim())
+    .filter(item => item.length > 0)
+    .map(item => item.replace(/\*\*/g, '').trim())
+    .filter(item => item.length > 0);
+  
+  return bullets;
+};
 
-  // Parse the action text into structured steps
 const parseActionSteps = (action: string | null) => {
   if (!action) return [];
   
-  // Try multiple patterns to catch different formats
   const patterns = [
-    /\*\*Day \d+[^:]*:\*\*|\*\*Week \d+[^:]*:\*\*/g,  // **Day 1:** or **Week 1:**
-    /Day \d+[^:]*:|Week \d+[^:]*:/gi,                 // Day 1: or Week 1: (no bold)
-    /\*\*Step \d+[^:]*:\*\*/gi,                       // **Step 1:**
-    /Step \d+[^:]*:/gi,                               // Step 1:
-    /^\d+\.\s+/gm,                                    // 1. 2. 3. (numbered list)
+    /\*\*Day \d+[^:]*:\*\*|\*\*Week \d+[^:]*:\*\*/g,
+    /Day \d+[^:]*:|Week \d+[^:]*:/gi,
+    /\*\*Step \d+[^:]*:\*\*/gi,
+    /Step \d+[^:]*:/gi,
+    /^\d+\.\s+/gm,
   ];
   
   let steps: Array<{ header: string; content: string }> = [];
   
-  // Try each pattern until we find one that works
   for (const pattern of patterns) {
     const headers = action.match(pattern);
     if (headers && headers.length > 0) {
       const parts = action.split(pattern);
       steps = headers.map((header, i) => ({
         header: header.replace(/\*\*/g, '').replace(/^\d+\.\s*/, '').replace(/:$/, '').trim(),
-        content: parts[i + 1]?.trim().split('\n\n')[0] || '' // Take first paragraph only
+        content: parts[i + 1]?.trim().split('\n\n')[0] || ''
       })).filter(step => step.content && step.content.length > 10);
       
-      if (steps.length > 0) {
-        console.log('Parsed with pattern:', pattern);
-        break; // Found a working pattern
-      }
+      if (steps.length > 0) break;
     }
   }
   
-  // If still no steps, try splitting by double newlines
   if (steps.length === 0 && action.includes('\n\n')) {
     const paragraphs = action.split('\n\n').filter(p => p.trim().length > 20);
     steps = paragraphs.map((p, i) => ({
       header: `Step ${i + 1}`,
       content: p.trim()
     }));
-    console.log('Parsed by paragraphs:', steps.length);
   }
   
-  console.log('Total steps found:', steps.length);
   return steps;
 };
 
-  const actionSteps = parseActionSteps(analysisResult?.action);
+const gapBullets = parseBulletPoints(analysisResult?.gap);
+const automationBullets = parseBulletPoints(analysisResult?.automation);
+const actionSteps = parseActionSteps(analysisResult?.action);
 const previewSteps = actionSteps.slice(0, 2);
 const remainingSteps = actionSteps.slice(2);
 
-// ADD THIS DEBUGGING
 console.log('=== DEBUG ACTION PARSING ===');
 console.log('Raw action text:', analysisResult?.action);
 console.log('Parsed steps:', actionSteps);
