@@ -11,71 +11,63 @@ interface DashboardProps {
 }
 
 const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProps) => {
-const [showFullPlan, setShowFullPlan] = useState(false);
+  const [showFullPlan, setShowFullPlan] = useState(false);
 
-// ADD THESE PARSING FUNCTIONS HERE:
-const parseBulletPoints = (text: string | null): string[] => {
-  if (!text) return [];
-  
-  const bullets = text
-    .split(/\*\*|\n•|\n-|\n(?=[A-Z])/)
-    .map(item => item.trim())
-    .filter(item => item.length > 0)
-    .map(item => item.replace(/\*\*/g, '').trim())
-    .filter(item => item.length > 0);
-  
-  return bullets;
-};
+  // Parse text into bullet points
+  const parseBulletPoints = (text: string | null): string[] => {
+    if (!text) return [];
+    
+    // Split by common patterns and clean up
+    const bullets = text
+      // Split by ** headings or bullet markers
+      .split(/\*\*[^*]+\*\*:?|\n•|\n-|\n(?=\d+\.)|(?<=\.)\s*(?=[A-Z])/)
+      .map(item => item.trim())
+      // Remove empty items and ** markers
+      .filter(item => item.length > 0)
+      .map(item => item.replace(/^\*\*|\*\*$/g, '').trim())
+      .filter(item => item.length > 20); // Only keep substantial items
+    
+    return bullets;
+  };
 
-const parseActionSteps = (action: string | null) => {
-  if (!action) return [];
-  
-  const patterns = [
-    /\*\*Day \d+[^:]*:\*\*|\*\*Week \d+[^:]*:\*\*/g,
-    /Day \d+[^:]*:|Week \d+[^:]*:/gi,
-    /\*\*Step \d+[^:]*:\*\*/gi,
-    /Step \d+[^:]*:/gi,
-    /^\d+\.\s+/gm,
-  ];
-  
-  let steps: Array<{ header: string; content: string }> = [];
-  
-  for (const pattern of patterns) {
-    const headers = action.match(pattern);
-    if (headers && headers.length > 0) {
-      const parts = action.split(pattern);
-      steps = headers.map((header, i) => ({
-        header: header.replace(/\*\*/g, '').replace(/^\d+\.\s*/, '').replace(/:$/, '').trim(),
-        content: parts[i + 1]?.trim().split('\n\n')[0] || ''
-      })).filter(step => step.content && step.content.length > 10);
+  // Parse Next Steps - try structured parsing first, then fall back to bullets
+  const parseNextSteps = (action: string | null): { structured: boolean; steps: Array<{ header?: string; content: string }> } => {
+    if (!action) return { structured: false, steps: [] };
+    
+    // Try structured Day/Week parsing first
+    const dayPattern = /\*\*(Day \d+[^:]*|Week \d+[^:]*|This Week|Next Week)\*\*:?/gi;
+    const headers = action.match(dayPattern) || [];
+    
+    if (headers.length >= 2) {
+      // Structured format detected
+      const parts = action.split(dayPattern);
+      const steps = headers.map((header, i) => ({
+        header: header.replace(/\*\*/g, '').replace(/:$/, '').trim(),
+        content: parts[i + headers.length]?.trim() || parts[i + 1]?.trim() || ''
+      })).filter(step => step.content.length > 0);
       
-      if (steps.length > 0) break;
+      if (steps.length >= 2) {
+        return { structured: true, steps };
+      }
     }
-  }
-  
-  if (steps.length === 0 && action.includes('\n\n')) {
-    const paragraphs = action.split('\n\n').filter(p => p.trim().length > 20);
-    steps = paragraphs.map((p, i) => ({
-      header: `Step ${i + 1}`,
-      content: p.trim()
-    }));
-  }
-  
-  return steps;
-};
+    
+    // Fall back to bullet point parsing
+    const bullets = parseBulletPoints(action);
+    return { 
+      structured: false, 
+      steps: bullets.map(content => ({ content }))
+    };
+  };
 
-const gapBullets = parseBulletPoints(analysisResult?.gap);
-const automationBullets = parseBulletPoints(analysisResult?.automation);
-const actionSteps = parseActionSteps(analysisResult?.action);
-const previewSteps = actionSteps.slice(0, 2);
-const remainingSteps = actionSteps.slice(2);
-
-console.log('=== DEBUG ACTION PARSING ===');
-console.log('Raw action text:', analysisResult?.action);
-console.log('Parsed steps:', actionSteps);
-console.log('Preview steps:', previewSteps);
-console.log('Remaining steps:', remainingSteps);
-console.log('===========================');
+  const gapBullets = parseBulletPoints(analysisResult?.gap);
+  const automationBullets = parseBulletPoints(analysisResult?.automation);
+  const nextStepsData = parseNextSteps(analysisResult?.action);
+  
+  // For structured steps, show 2 preview + rest expandable
+  // For bullets, show 3 preview + rest expandable
+  const previewCount = nextStepsData.structured ? 2 : 3;
+  const previewSteps = nextStepsData.steps.slice(0, previewCount);
+  const remainingSteps = nextStepsData.steps.slice(previewCount);
 
   // Format source name for display
   const formatSourceName = (source?: string): string => {
@@ -96,7 +88,7 @@ console.log('===========================');
       title: 'Overview',
       icon: Eye,
       borderClass: 'bento-card-overview',
-      description: 'What you\'re dealing with',
+      description: 'What you're dealing with',
       content: (
         <div className="space-y-4">
           <p className="text-white/80 leading-relaxed">
@@ -161,73 +153,105 @@ console.log('===========================');
       description: 'Your action plan',
       content: (
         <div className="space-y-4">
-          {/* Preview Steps (First 2) */}
-          {previewSteps.map((step, i) => (
-            <div key={i} className="p-4 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30">
-              <div className="flex items-start gap-3 mb-2">
-                <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
-                  {i + 1}
-                </span>
-                <h4 className="font-semibold text-flame-yellow">{step.header}</h4>
-              </div>
-              <p className="text-white/80 text-sm ml-9 leading-relaxed">
-                {step.content}
-              </p>
-            </div>
-          ))}
-
-          {/* Expandable Section */}
-          {remainingSteps.length > 0 && (
+          {nextStepsData.steps.length > 0 ? (
             <>
-              <AnimatePresence>
-                {showFullPlan && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-4"
+              {/* Show Preview Steps */}
+              {nextStepsData.structured ? (
+                // Structured format with headers
+                previewSteps.map((step, i) => (
+                  <div key={i} className="p-4 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30">
+                    <div className="flex items-start gap-3 mb-2">
+                      <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
+                        {i + 1}
+                      </span>
+                      <h4 className="font-semibold text-flame-yellow">{step.header}</h4>
+                    </div>
+                    <p className="text-white/80 text-sm ml-9 leading-relaxed">
+                      {step.content}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                // Bullet format
+                <ul className="space-y-3">
+                  {previewSteps.map((step, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
+                        {i + 1}
+                      </span>
+                      <span className="text-white/80 leading-relaxed">{step.content}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Expandable Section */}
+              {remainingSteps.length > 0 && (
+                <>
+                  <AnimatePresence>
+                    {showFullPlan && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="space-y-4 overflow-hidden"
+                      >
+                        {nextStepsData.structured ? (
+                          // Structured format
+                          remainingSteps.map((step, i) => (
+                            <div key={i + previewCount} className="p-4 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30">
+                              <div className="flex items-start gap-3 mb-2">
+                                <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
+                                  {i + previewCount + 1}
+                                </span>
+                                <h4 className="font-semibold text-flame-yellow">{step.header}</h4>
+                              </div>
+                              <p className="text-white/80 text-sm ml-9 leading-relaxed">
+                                {step.content}
+                              </p>
+                            </div>
+                          ))
+                        ) : (
+                          // Bullet format
+                          <ul className="space-y-3">
+                            {remainingSteps.map((step, i) => (
+                              <li key={i + previewCount} className="flex items-start gap-3">
+                                <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
+                                  {i + previewCount + 1}
+                                </span>
+                                <span className="text-white/80 leading-relaxed">{step.content}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Toggle Button */}
+                  <button
+                    onClick={() => setShowFullPlan(!showFullPlan)}
+                    className="w-full py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all text-flame-yellow hover:bg-flame-yellow/10 border border-flame-yellow/30 hover:border-flame-yellow/50"
                   >
-                    {remainingSteps.map((step, i) => (
-                      <div key={i + 2} className="p-4 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30">
-                        <div className="flex items-start gap-3 mb-2">
-                          <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
-                            {i + 3}
-                          </span>
-                          <h4 className="font-semibold text-flame-yellow">{step.header}</h4>
-                        </div>
-                        <p className="text-white/80 text-sm ml-9 leading-relaxed">
-                          {step.content}
-                        </p>
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Toggle Button */}
-              <button
-                onClick={() => setShowFullPlan(!showFullPlan)}
-                className="w-full py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all text-flame-yellow hover:bg-flame-yellow/10 border border-flame-yellow/30"
-              >
-                {showFullPlan ? (
-                  <>
-                    <ChevronUp className="w-4 h-4" />
-                    <span>Show Less</span>
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-4 h-4" />
-                    <span>Show Full Plan ({remainingSteps.length} more steps)</span>
-                  </>
-                )}
-              </button>
+                    {showFullPlan ? (
+                      <>
+                        <ChevronUp className="w-4 h-4" />
+                        <span>Show Less</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4" />
+                        <span>Show {remainingSteps.length} More Step{remainingSteps.length > 1 ? 's' : ''}</span>
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
             </>
-          )}
-
-          {/* If no structured steps, show message */}
-          {actionSteps.length === 0 && (
+          ) : (
             <div className="text-white/60 text-center py-4">
-              No structured action plan available
+              No action steps available
             </div>
           )}
         </div>
@@ -314,7 +338,7 @@ console.log('===========================');
               </span>
               <div className="flex items-center gap-3 flex-wrap">
                 {sources.slice(0, 5).map((source, i) => (
-                  <a
+                  
                     key={i}
                     href={source.url}
                     target="_blank"
