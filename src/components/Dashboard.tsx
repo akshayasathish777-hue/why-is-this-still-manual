@@ -30,27 +30,62 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
   };
 
   // Parse the action text into structured steps
-  const parseActionSteps = (action: string | null) => {
-    if (!action) return [];
-    
-    // Split by day markers (Day 1, Day 2, etc.)
-    const dayPattern = /\*\*Day \d+[^:]*:\*\*|\*\*Week \d+[^:]*:\*\*/g;
-    const parts = action.split(dayPattern);
-    const headers = action.match(dayPattern) || [];
-    
-    const steps = headers.map((header, i) => ({
-      header: header.replace(/\*\*/g, '').trim(),
-      content: parts[i + 1]?.trim() || ''
-    })).filter(step => step.content);
-    
-    return steps;
-  };
+const parseActionSteps = (action: string | null) => {
+  if (!action) return [];
+  
+  // Try multiple patterns to catch different formats
+  const patterns = [
+    /\*\*Day \d+[^:]*:\*\*|\*\*Week \d+[^:]*:\*\*/g,  // **Day 1:** or **Week 1:**
+    /Day \d+[^:]*:|Week \d+[^:]*:/gi,                 // Day 1: or Week 1: (no bold)
+    /\*\*Step \d+[^:]*:\*\*/gi,                       // **Step 1:**
+    /Step \d+[^:]*:/gi,                               // Step 1:
+    /^\d+\.\s+/gm,                                    // 1. 2. 3. (numbered list)
+  ];
+  
+  let steps: Array<{ header: string; content: string }> = [];
+  
+  // Try each pattern until we find one that works
+  for (const pattern of patterns) {
+    const headers = action.match(pattern);
+    if (headers && headers.length > 0) {
+      const parts = action.split(pattern);
+      steps = headers.map((header, i) => ({
+        header: header.replace(/\*\*/g, '').replace(/^\d+\.\s*/, '').replace(/:$/, '').trim(),
+        content: parts[i + 1]?.trim().split('\n\n')[0] || '' // Take first paragraph only
+      })).filter(step => step.content && step.content.length > 10);
+      
+      if (steps.length > 0) {
+        console.log('Parsed with pattern:', pattern);
+        break; // Found a working pattern
+      }
+    }
+  }
+  
+  // If still no steps, try splitting by double newlines
+  if (steps.length === 0 && action.includes('\n\n')) {
+    const paragraphs = action.split('\n\n').filter(p => p.trim().length > 20);
+    steps = paragraphs.map((p, i) => ({
+      header: `Step ${i + 1}`,
+      content: p.trim()
+    }));
+    console.log('Parsed by paragraphs:', steps.length);
+  }
+  
+  console.log('Total steps found:', steps.length);
+  return steps;
+};
 
-  const gapBullets = parseBulletPoints(analysisResult?.gap);
-  const automationBullets = parseBulletPoints(analysisResult?.automation);
   const actionSteps = parseActionSteps(analysisResult?.action);
-  const previewSteps = actionSteps.slice(0, 2);
-  const remainingSteps = actionSteps.slice(2);
+const previewSteps = actionSteps.slice(0, 2);
+const remainingSteps = actionSteps.slice(2);
+
+// ADD THIS DEBUGGING
+console.log('=== DEBUG ACTION PARSING ===');
+console.log('Raw action text:', analysisResult?.action);
+console.log('Parsed steps:', actionSteps);
+console.log('Preview steps:', previewSteps);
+console.log('Remaining steps:', remainingSteps);
+console.log('===========================');
 
   // Format source name for display
   const formatSourceName = (source?: string): string => {
