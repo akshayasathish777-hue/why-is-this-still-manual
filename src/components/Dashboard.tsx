@@ -7,7 +7,7 @@ import type { AnalyzedProblem } from '@/lib/api/analyze';
 interface DashboardProps {
   onViewChange: (view: ViewType) => void;
   analysisResult: AnalyzedProblem | null;
-  sources?: Array<{ url: string; title: string; source?: string }>;
+  sources?: Array<{ url: string; title: string; source?: string }> | undefined;
 }
 
 const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProps) => {
@@ -88,7 +88,7 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
       title: 'Overview',
       icon: Eye,
       borderClass: 'bento-card-overview',
-      description: 'What you're dealing with',
+      description: 'What you\'re dealing with',
       content: (
         <div className="space-y-4">
           <p className="text-white/80 leading-relaxed">
@@ -338,7 +338,7 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
               </span>
               <div className="flex items-center gap-3 flex-wrap">
                 {sources.slice(0, 5).map((source, i) => (
-                  
+                  <a
                     key={i}
                     href={source.url}
                     target="_blank"
