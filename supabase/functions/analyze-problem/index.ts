@@ -219,46 +219,93 @@ Deno.serve(async (req) => {
     // Step 2: Analyze with Gemini via Lovable AI Gateway
     console.log("[analyze-problem] Step 2: Analyzing with Gemini...");
 
-    const sentimentInstructions = `
-Additionally, analyze the emotional intensity of the discussions and provide sentiment scores:
-- frustration_level (1-10): How frustrated/annoyed are people about this problem?
-- urgency_score (1-10): How urgent is the need for a solution?
-- willingness_to_pay (1-10): How likely would they pay for a solution?
+    // BUILD THE IMPROVED PROMPTS
+    let systemPrompt: string;
+    let userPrompt: string;
 
-Include these scores in a "sentiment" object in your response.`;
+    if (mode === "solver") {
+      systemPrompt = `You are a helpful automation expert analyzing a manual task based on real online discussions.
 
-    const systemPrompt =
-      mode === "solver"
-        ? `You are an expert analyst who identifies manual workflow problems and automation opportunities.
-           Analyze the discussions from Reddit, Twitter/X, and Quora provided and extract insights about a specific manual workflow problem.
-           
-           You MUST respond with a JSON object containing these exact fields:
-           - title: A clear, concise title for the problem (max 60 chars)
-           - domain: The industry/domain (e.g., "Healthcare", "Finance", "HR", "Sales")
-           - role: Who typically faces this problem (e.g., "Operations Manager", "Data Analyst")
-           - overview: Summary of the problem and its impact (2-3 sentences)
-           - gap: Why this is still done manually - root causes. Reference specific pain points from the discussions. (2-3 bullet points as a string)
-           - automation: How AI/automation could solve this. Mention specific tools like GPT-4, Zapier, Airtable, etc. (2-3 bullet points as a string)
-           - action: Concrete Day-1 next steps to automate - be specific, not vague. (2-3 numbered steps as a string)
-           - sentiment: An object with frustration_level, urgency_score, and willingness_to_pay (each 1-10)
-           
-           ${sentimentInstructions}`
-        : `You are an expert at discovering real-world problems that could be solved with software.
-           Analyze the discussions from Reddit, Twitter/X, and Quora and identify 3 distinct problems people are struggling with.
-           
-           Respond with a JSON array of exactly 3 objects, each with:
-           - title: A clear, concise problem title (max 60 chars)
-           - domain: The market category
-           - role: Inferred user persona (e.g., 'SaaS Marketer', 'Small Business Owner')
-           - overview: What people are struggling with (2-3 sentences)
-           - gap: Why no good solution exists yet based on thread analysis
-           - automation: AI opportunity based on expressed needs in the threads
-           - action: First step to validate/build this solution
-           - sentiment: An object with frustration_level, urgency_score, and willingness_to_pay (each 1-10)
-           
-           Make each problem distinct and valuable. Focus on problems where AI could provide a breakthrough solution.
-           
-           ${sentimentInstructions}`;
+Write like you're explaining to a friend, not writing a corporate report. Be conversational but smart.
+
+You MUST respond with a JSON object containing these exact fields:
+- title: Clear problem name (e.g., 'Weekly Social Media Reporting Chaos')
+- domain: The industry/domain
+- role: Who typically faces this
+- overview: Explain what they're doing and why in 2-3 sentences. Be specific about the steps involved.
+- gap: Explain WHY it's still manual in 2-3 sentences. Use evidence from the discussions. Be honest about the real barriers.
+- automation: Give THREE specific automation paths, ordered by difficulty. Include exact tools, costs, and what they do. Format as: **Quick Win (No-Code):** [details] **Better Solution (Low-Code):** [details] **Best Solution (Full Automation):** [details]
+- action: Give a step-by-step action plan. NOT vague advice. Give the ACTUAL first 5 steps they should do this week. Format as: **This Week:** Day 1: [task] Day 2: [task] etc. **Next Week:** [milestone]
+- sentiment: An object with frustration_level (1-10), urgency_score (1-10), and willingness_to_pay (1-10)`;
+
+      userPrompt = `Analyze these discussions about "${query}" and create a detailed, specific analysis.
+
+USER'S TASK: ${query}
+
+REAL DISCUSSIONS FROM REDDIT/TWITTER/QUORA:
+${resultsContext}
+
+Respond with valid JSON only, no markdown code blocks.
+
+Example format:
+{
+  "title": "Weekly Social Media Reporting Chaos",
+  "domain": "Marketing",
+  "role": "Social Media Manager",
+  "overview": "Every Monday morning, you're manually logging into Facebook, Instagram, Twitter, and LinkedIn to pull engagement metrics for last week...",
+  "gap": "The platform APIs exist (Meta Graph API, Twitter API v2, LinkedIn Marketing API), but they need developer setup and OAuth tokens that expire every 60 days...",
+  "automation": "**Quick Win (No-Code):**\\nUse Buffer's Analytics Export ($15/mo) + Zapier Premium ($50/mo)...\\n\\n**Better Solution (Low-Code):**\\nBuild a Google Apps Script...\\n\\n**Best Solution (Full Automation):**\\nUse Supermetrics ($99/mo)...",
+  "action": "**This Week:**\\n\\nDay 1 (Today - 30 min): Sign up for free trials...\\n\\nDay 2 (1 hour): Connect your social accounts...\\n\\n**Next Week:**\\nLet it run on auto-pilot...",
+  "sentiment": {
+    "frustration_level": 8,
+    "urgency_score": 6,
+    "willingness_to_pay": 7
+  }
+}`;
+
+    } else {
+      // Builder mode
+      systemPrompt = `You are discovering real market problems from online discussions.
+
+Analyze discussions and extract 3 DISTINCT, high-value problems. Make the content specific and actionable, not generic. Write like you're telling a founder friend what you found.
+
+Respond with a JSON array of exactly 3 objects, each with:
+- title: Specific problem from discussions (e.g., 'Instagram Creators Can't Track Sponsor ROI')
+- domain: Market category based on the problem
+- role: Who's struggling (e.g., 'Instagram Influencer', 'SaaS Marketer')
+- overview: What people are struggling with in 2-3 sentences. Be specific about their pain.
+- gap: Why no good solution exists yet, based on what you see in the discussions.
+- automation: What AI/automation opportunity exists. Give 3 concrete product ideas formatted as: **Micro SaaS Opportunity:** [details] **AI Enhancement:** [details] **Marketplace Play:** [details]
+- action: First steps to validate and build this. Give a 2-week action plan formatted as: **Week 1 - Validation:** Day 1-2: [task] Day 3-4: [task] **Week 2 - MVP:** Day 1-3: [task] Day 4-5: [task]
+- sentiment: An object with frustration_level (1-10), urgency_score (1-10), and willingness_to_pay (1-10)
+
+Make each problem DISTINCT. Don't repeat the same issue 3 times.`;
+
+      userPrompt = `Analyze these discussions about "${query}" and extract 3 distinct problems.
+
+DISCUSSIONS FROM REDDIT/TWITTER/QUORA:
+${resultsContext}
+
+Respond with valid JSON array only, no markdown code blocks.
+
+Example format:
+[
+  {
+    "title": "Instagram Creators Can't Track Sponsor ROI",
+    "domain": "Creator Economy",
+    "role": "Instagram Influencer",
+    "overview": "Instagram creators with 10K-100K followers are struggling to show sponsors concrete ROI from paid posts...",
+    "gap": "Instagram's API deliberately limits data access to prevent scrapers and protect user privacy...",
+    "automation": "**Micro SaaS Opportunity:**\\nBuild a Chrome extension that scrapes Instagram Insights data...\\n\\n**AI Enhancement:**\\nUse GPT-4 Vision to analyze Instagram posts...\\n\\n**Marketplace Play:**\\nCreate a two-sided marketplace...",
+    "action": "**Week 1 - Validation:**\\n\\nDay 1-2: Go to these Reddit threads and DM the top 10 commenters...\\n\\n**Week 2 - MVP:**\\nDay 1-3: Use Instagram Basic Display API...",
+    "sentiment": {
+      "frustration_level": 9,
+      "urgency_score": 7,
+      "willingness_to_pay": 8
+    }
+  }
+]`;
+    }
 
     const geminiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -270,10 +317,7 @@ Include these scores in a "sentiment" object in your response.`;
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `Analyze these discussions about "${query}" and identify manual workflow problems:\n\n${resultsContext}\n\nRespond with valid JSON only, no markdown code blocks.`,
-          },
+          { role: "user", content: userPrompt },
         ],
       }),
     });

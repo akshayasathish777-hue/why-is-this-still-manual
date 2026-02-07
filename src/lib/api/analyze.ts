@@ -1,7 +1,25 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { SourceType, SourceFilter, AnalyzedProblem, CuratedProblem, SentimentScores } from "@/types/views";
+import type { SourceType, SourceFilter, CuratedProblem, SentimentScores } from "@/types/views";
 
-export type { AnalyzedProblem };
+// ====== TYPE DEFINITIONS ======
+
+export interface SentimentScore {
+  frustration_level: number;
+  urgency_score: number;
+  willingness_to_pay: number;
+}
+
+export type AnalyzedProblem = {
+  title: string;
+  domain: string;
+  role: string;
+  overview: string;
+  gap: string;
+  automation: string;
+  action: string;
+  sentiment?: SentimentScore;  // Sentiment analysis scores
+  id?: string;                  // Database UUID (for trend tracking)
+};
 
 export interface AnalysisSource {
   url: string;
@@ -15,6 +33,8 @@ export interface AnalysisResponse {
   sources?: AnalysisSource[];
   error?: string;
 }
+
+// ====== API FUNCTIONS ======
 
 export const analyzeApi = {
   /**
@@ -77,6 +97,8 @@ export const analyzeApi = {
     })) as CuratedProblem[];
   },
 };
+
+// ====== EXPORT FUNCTIONS ======
 
 /**
  * Export problems as JSON file

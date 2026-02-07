@@ -1,49 +1,37 @@
-import { motion } from 'framer-motion';
-import { ArrowLeft, Eye, AlertTriangle, Zap, ArrowRight, CheckCircle2, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Eye, AlertTriangle, Zap, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ViewType } from '@/types/views';
-import type { AnalyzedProblem, AnalysisSource } from '@/lib/api/analyze';
+import type { AnalyzedProblem } from '@/lib/api/analyze';
 
 interface DashboardProps {
   onViewChange: (view: ViewType) => void;
   analysisResult: AnalyzedProblem | null;
-  sources?: AnalysisSource[];
 }
 
-const parseListContent = (text: string | null) => {
-  if (!text) return [];
-  // Split by newlines or bullet points and filter empty lines
-  return text
-    .split(/[\n•\-]/)
-    .map(item => item.trim())
-    .filter(item => item.length > 0);
-};
+const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
+  const [showFullPlan, setShowFullPlan] = useState(false);
 
-const parseSteps = (text: string | null) => {
-  if (!text) return [];
-  // Try to parse numbered steps or split by newlines
-  const steps = text
-    .split(/(?:\d+\.\s*|\n)/)
-    .map(item => item.trim())
-    .filter(item => item.length > 0);
-  return steps.slice(0, 3); // Limit to 3 steps
-};
+  // Parse the action text into structured steps
+  const parseActionSteps = (action: string | null) => {
+    if (!action) return [];
+    
+    // Split by day markers (Day 1, Day 2, etc.)
+    const dayPattern = /\*\*Day \d+[^:]*:\*\*/g;
+    const parts = action.split(dayPattern);
+    const headers = action.match(dayPattern) || [];
+    
+    const steps = headers.map((header, i) => ({
+      header: header.replace(/\*\*/g, '').trim(),
+      content: parts[i + 1]?.trim() || ''
+    })).filter(step => step.content);
+    
+    return steps;
+  };
 
-const formatSourceName = (source?: string): string => {
-  if (!source) return 'Reddit';
-  if (source === 'twitter') return 'Twitter/X';
-  return source.charAt(0).toUpperCase() + source.slice(1);
-};
-
-const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProps) => {
-  const gapItems = parseListContent(analysisResult?.gap);
-  const automationItems = parseListContent(analysisResult?.automation);
-  const actionSteps = parseSteps(analysisResult?.action);
-
-  // Count unique sources
-  const uniqueSources = [...new Set(sources.map(s => s.source || 'reddit'))];
-  const sourceCountText = sources.length > 0 
-    ? `${sources.length} real discussion${sources.length > 1 ? 's' : ''} from ${uniqueSources.map(formatSourceName).join(', ')}`
-    : '1 real Reddit discussion';
+  const actionSteps = parseActionSteps(analysisResult?.action);
+  const previewSteps = actionSteps.slice(0, 2); // Show first 2 steps initially
+  const remainingSteps = actionSteps.slice(2);
 
   const panels = [
     {
@@ -51,10 +39,10 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
       title: 'Overview',
       icon: Eye,
       borderClass: 'bento-card-overview',
-      description: analysisResult?.title || 'Your task analysis summary',
+      description: 'What you\'re dealing with',
       content: (
         <div className="space-y-4">
-          <p className="text-white/80 leading-relaxed">
+          <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
             {analysisResult?.overview || 'No overview available'}
           </p>
           <div className="flex items-center gap-2 pt-2">
@@ -75,18 +63,11 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
       title: 'Why Still Manual?',
       icon: AlertTriangle,
       borderClass: 'bento-card-why',
-      description: 'Root causes keeping this process manual.',
+      description: 'The real barriers keeping this manual',
       content: (
-        <ul className="space-y-3">
-          {gapItems.length > 0 ? gapItems.map((item, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-flame-red mt-2 shrink-0 shadow-[0_0_8px_rgba(208,0,0,0.6)]" />
-              <span className="text-white/80">{item}</span>
-            </li>
-          )) : (
-            <li className="text-white/60">No gaps identified</li>
-          )}
-        </ul>
+        <div className="text-white/80 leading-relaxed whitespace-pre-wrap">
+          {analysisResult?.gap || 'No gap analysis available'}
+        </div>
       ),
     },
     {
@@ -94,18 +75,11 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
       title: 'AI Opportunity',
       icon: Zap,
       borderClass: 'bento-card-opportunity',
-      description: 'Where AI can transform this workflow.',
+      description: 'Specific automation paths',
       content: (
-        <ul className="space-y-3">
-          {automationItems.length > 0 ? automationItems.map((item, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-flame-orange mt-2 shrink-0 shadow-[0_0_8px_rgba(232,93,4,0.6)]" />
-              <span className="text-white/80">{item}</span>
-            </li>
-          )) : (
-            <li className="text-white/60">No automation opportunities identified</li>
-          )}
-        </ul>
+        <div className="text-white/80 leading-relaxed whitespace-pre-wrap">
+          {analysisResult?.automation || 'No automation opportunities identified'}
+        </div>
       ),
     },
     {
@@ -113,16 +87,77 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
       title: 'Next Steps',
       icon: ArrowRight,
       borderClass: 'bento-card-next',
-      description: 'Actionable steps to automate this process.',
+      description: 'Your action plan',
       content: (
         <div className="space-y-4">
-          {actionSteps.length > 0 ? actionSteps.map((step, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30 shadow-[0_0_15px_rgba(255,186,8,0.1)]">
-              <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shadow-[0_0_10px_rgba(255,186,8,0.3)]">{i + 1}</span>
-              <span className="text-white/80">{step}</span>
+          {/* Preview Steps (First 2) */}
+          {previewSteps.map((step, i) => (
+            <div key={i} className="p-4 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30">
+              <div className="flex items-start gap-3 mb-2">
+                <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
+                  {i + 1}
+                </span>
+                <h4 className="font-semibold text-flame-yellow">{step.header}</h4>
+              </div>
+              <p className="text-white/80 text-sm ml-9 leading-relaxed whitespace-pre-wrap">
+                {step.content}
+              </p>
             </div>
-          )) : (
-            <p className="text-white/60">No action steps available</p>
+          ))}
+
+          {/* Expandable Section */}
+          {remainingSteps.length > 0 && (
+            <>
+              <AnimatePresence>
+                {showFullPlan && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-4"
+                  >
+                    {remainingSteps.map((step, i) => (
+                      <div key={i + 2} className="p-4 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30">
+                        <div className="flex items-start gap-3 mb-2">
+                          <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
+                            {i + 3}
+                          </span>
+                          <h4 className="font-semibold text-flame-yellow">{step.header}</h4>
+                        </div>
+                        <p className="text-white/80 text-sm ml-9 leading-relaxed whitespace-pre-wrap">
+                          {step.content}
+                        </p>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Toggle Button */}
+              <button
+                onClick={() => setShowFullPlan(!showFullPlan)}
+                className="w-full py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all text-flame-yellow hover:bg-flame-yellow/10 border border-flame-yellow/30"
+              >
+                {showFullPlan ? (
+                  <>
+                    <ChevronUp className="w-4 h-4" />
+                    <span>Show Less</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-4 h-4" />
+                    <span>Show Full Plan ({remainingSteps.length} more steps)</span>
+                  </>
+                )}
+              </button>
+            </>
+          )}
+
+          {/* If no structured steps, show raw text */}
+          {actionSteps.length === 0 && (
+            <div className="text-white/80 leading-relaxed whitespace-pre-wrap">
+              {analysisResult?.action || 'No action steps available'}
+            </div>
           )}
         </div>
       ),
@@ -157,12 +192,12 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
           Analysis Complete
         </h1>
         <p className="text-white/70 text-lg max-w-2xl mx-auto">
-          Here's what we discovered about your manual process and how to automate it
+          Here's your automation roadmap with specific tools and action steps
         </p>
       </motion.div>
 
       {/* Bento Grid */}
-      <div className="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+      <div className="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 relative z-10">
         {panels.map((panel, index) => (
           <motion.div
             key={panel.id}
@@ -191,49 +226,6 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
           </motion.div>
         ))}
       </div>
-
-      {/* Trust Signal */}
-      {(sources.length > 0 || analysisResult?.source_url) && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.4 }}
-          className="max-w-6xl mx-auto w-full mt-8 relative z-10"
-        >
-          <div className="glass-card p-4 flex items-center gap-3 flex-wrap">
-            <CheckCircle2 className="w-5 h-5 text-flame-yellow shrink-0" />
-            <span className="text-white/70 text-sm">
-              ✓ Insights grounded in {sourceCountText}
-            </span>
-            <div className="flex items-center gap-2 flex-wrap">
-              {sources.length > 0 ? (
-                sources.slice(0, 5).map((source, i) => (
-                  <a
-                    key={i}
-                    href={source.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-flame-orange hover:text-flame-yellow text-sm flex items-center gap-1 transition-colors"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    {formatSourceName(source.source)} {i + 1}
-                  </a>
-                ))
-              ) : analysisResult?.source_url ? (
-                <a
-                  href={analysisResult.source_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-flame-orange hover:text-flame-yellow text-sm flex items-center gap-1 transition-colors"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  View source
-                </a>
-              ) : null}
-            </div>
-          </div>
-        </motion.div>
-      )}
 
       {/* Ambient background glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
