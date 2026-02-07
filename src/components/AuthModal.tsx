@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Lock, Loader2 } from 'lucide-react';
+import { X, Mail, Lock, Loader2, Flame } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import Logo from './Logo';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -104,9 +103,14 @@ const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Logo */}
+            {/* Flame Icon */}
             <div className="flex justify-center mb-6">
-              <Logo size="md" />
+              <Flame 
+                className="w-16 h-16 text-flame-orange"
+                style={{
+                  filter: 'drop-shadow(0 0 20px rgba(255,186,8,0.5))'
+                }}
+              />
             </div>
 
             {/* Tabs */}

@@ -1,16 +1,43 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Loader2, RefreshCw, Trash2, Bell, BellOff, Calendar, Bookmark } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Search, 
+  Loader2, 
+  Play, 
+  Trash2, 
+  Bell, 
+  BellOff, 
+  Calendar, 
+  BookmarkCheck,
+  SearchX,
+  Puzzle,
+  Rocket,
+  MessageSquare,
+  HelpCircle
+} from 'lucide-react';
 import { savedSearchesApi, type SavedSearch } from '@/lib/api/savedSearches';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { SourceType } from '@/types/views';
-import Logo from './Logo';
 
 interface SavedSearchesProps {
   onBack: () => void;
   onRunSearch: (query: string, sources: SourceType[], searchType: 'solver' | 'builder') => void;
 }
+
+const SourceIcon = ({ source }: { source: string }) => {
+  switch (source) {
+    case 'reddit':
+      return <MessageSquare className="w-3 h-3 text-[#FF4500]" />;
+    case 'twitter':
+      return <MessageSquare className="w-3 h-3 text-[#1DA1F2]" />;
+    case 'quora':
+      return <HelpCircle className="w-3 h-3 text-[#B92B27]" />;
+    default:
+      return null;
+  }
+};
 
 const SavedSearches = ({ onBack, onRunSearch }: SavedSearchesProps) => {
   const [searches, setSearches] = useState<SavedSearch[]>([]);
@@ -118,7 +145,7 @@ const SavedSearches = ({ onBack, onRunSearch }: SavedSearchesProps) => {
         className="text-center mb-10 relative z-10"
       >
         <div className="flex justify-center mb-4">
-          <Logo size="md" />
+          <BookmarkCheck className="w-12 h-12 text-flame-yellow" />
         </div>
         <h1 className="headline-fire text-3xl md:text-4xl mb-2">My Saved Searches</h1>
         <p className="text-white/60">Re-run, edit, or manage alerts for your bookmarked searches</p>
@@ -136,13 +163,14 @@ const SavedSearches = ({ onBack, onRunSearch }: SavedSearchesProps) => {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-20"
           >
-            <Bookmark className="w-16 h-16 text-flame-yellow/30 mx-auto mb-4" />
+            <SearchX className="w-12 h-12 text-flame-yellow/30 mx-auto mb-4" />
             <h3 className="text-white/80 text-xl mb-2">No saved searches yet</h3>
             <p className="text-white/50 mb-6">Run a search and click 'Save' to bookmark it for later</p>
             <button
               onClick={onBack}
-              className="btn-fire-gradient px-6 py-3 rounded-lg font-medium"
+              className="btn-fire-gradient px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2"
             >
+              <Search className="w-4 h-4" />
               Start Searching
             </button>
           </motion.div>
@@ -164,23 +192,37 @@ const SavedSearches = ({ onBack, onRunSearch }: SavedSearchesProps) => {
                         <Search className="w-4 h-4 text-flame-yellow" />
                         <span className="text-white font-medium">"{search.query}"</span>
                         <span
-                          className={`text-xs px-2 py-0.5 rounded-full ${
+                          className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
                             search.search_type === 'solver'
                               ? 'bg-blue-500/20 text-blue-400'
                               : 'bg-green-500/20 text-green-400'
                           }`}
                         >
-                          {search.search_type === 'solver' ? 'Solver' : 'Builder'}
+                          {search.search_type === 'solver' ? (
+                            <>
+                              <Puzzle className="w-3 h-3" />
+                              Solver
+                            </>
+                          ) : (
+                            <>
+                              <Rocket className="w-3 h-3" />
+                              Builder
+                            </>
+                          )}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-3 text-sm text-white/50">
+                      <div className="flex items-center gap-3 text-sm text-white/50 flex-wrap">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           Created {formatDate(search.created_at)}
                         </span>
                         <span>•</span>
-                        <span className="capitalize">{search.sources.join(', ')}</span>
+                        <span className="flex items-center gap-1">
+                          {search.sources.map((source, i) => (
+                            <SourceIcon key={i} source={source} />
+                          ))}
+                        </span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
                           {search.alert_enabled ? (
@@ -203,7 +245,7 @@ const SavedSearches = ({ onBack, onRunSearch }: SavedSearchesProps) => {
                         onClick={() => handleRerun(search)}
                         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-flame-yellow/10 text-flame-yellow hover:bg-flame-yellow/20 transition-colors text-sm font-medium"
                       >
-                        <RefreshCw className="w-4 h-4" />
+                        <Play className="w-4 h-4" />
                         Re-run
                       </button>
 

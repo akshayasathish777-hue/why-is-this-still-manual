@@ -1,10 +1,7 @@
 import { motion } from 'framer-motion';
-import { Puzzle, Rocket, ArrowRight } from 'lucide-react';
+import { Puzzle, Rocket, ArrowRight, Flame } from 'lucide-react';
 import type { ViewType } from '@/types/views';
-import Logo from './Logo';
 import RotatingCatchphrase from './RotatingCatchphrase';
-import SocialProofBar from './SocialProofBar';
-import FeatureGrid from './FeatureGrid';
 import LiveSourceBadges from './LiveSourceBadges';
 
 interface LandingPageProps {
@@ -41,14 +38,35 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
         transition={{ duration: 0.6 }}
         className="text-center mb-8 relative z-10 max-w-5xl mx-auto"
       >
-        {/* Logo */}
+        {/* Flame Logo */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1, duration: 0.5 }}
           className="flex justify-center mb-8"
         >
-          <Logo size="lg" animate />
+          <motion.div
+            animate={{
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="relative"
+          >
+            <Flame 
+              className="w-[120px] h-[120px] text-flame-orange"
+              style={{
+                filter: 'drop-shadow(0 0 40px rgba(255,186,8,0.6))'
+              }}
+            />
+            {/* Ambient glow behind flame */}
+            <div 
+              className="absolute inset-0 bg-gradient-radial from-flame-yellow/30 to-transparent rounded-full blur-xl -z-10 scale-150"
+            />
+          </motion.div>
         </motion.div>
         
         {/* Main Headline */}
@@ -142,16 +160,6 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
           </motion.button>
         ))}
       </motion.div>
-
-      {/* Social Proof Bar */}
-      <div className="w-full max-w-4xl relative z-10 mb-12">
-        <SocialProofBar />
-      </div>
-
-      {/* Feature Grid */}
-      <div className="w-full relative z-10 mb-12">
-        <FeatureGrid />
-      </div>
 
       {/* Live Source Badges */}
       <div className="relative z-10 mb-8">

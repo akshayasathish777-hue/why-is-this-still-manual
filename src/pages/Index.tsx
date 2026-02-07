@@ -5,7 +5,6 @@ import ProblemSolver from '@/components/ProblemSolver';
 import CuriousBuilder from '@/components/CuriousBuilder';
 import Dashboard from '@/components/Dashboard';
 import LoadingOverlay from '@/components/LoadingOverlay';
-import NavLogo from '@/components/NavLogo';
 import UserMenu from '@/components/UserMenu';
 import AuthModal from '@/components/AuthModal';
 import SavedSearches from '@/components/SavedSearches';
@@ -202,15 +201,8 @@ const Index = () => {
     }
   };
 
-  const showNavLogo = currentView !== 'landing';
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav Logo - shows on all pages except landing */}
-      {showNavLogo && (
-        <NavLogo onClick={() => setCurrentView('landing')} />
-      )}
-
       {/* User Menu - shows when logged in */}
       {user && currentView !== 'savedSearches' && currentView !== 'emailPreferences' && (
         <div className="fixed top-5 right-5 z-[1000]">
