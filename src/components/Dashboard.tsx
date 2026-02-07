@@ -1,23 +1,40 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Eye, AlertTriangle, Zap, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Eye, AlertTriangle, Zap, ArrowRight, ChevronDown, ChevronUp, CheckCircle2, ExternalLink } from 'lucide-react';
 import type { ViewType } from '@/types/views';
 import type { AnalyzedProblem } from '@/lib/api/analyze';
 
 interface DashboardProps {
   onViewChange: (view: ViewType) => void;
   analysisResult: AnalyzedProblem | null;
+  sources?: Array<{ url: string; title: string; source?: string }>;
 }
 
-const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
+const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProps) => {
   const [showFullPlan, setShowFullPlan] = useState(false);
+
+  // Parse text into bullet points
+  const parseBulletPoints = (text: string | null): string[] => {
+    if (!text) return [];
+    
+    // Split by common bullet patterns: **, •, -, newline followed by capital letter
+    const bullets = text
+      .split(/\*\*|\n•|\n-|\n(?=[A-Z])/)
+      .map(item => item.trim())
+      .filter(item => item.length > 0)
+      // Remove ** markdown if present
+      .map(item => item.replace(/\*\*/g, '').trim())
+      .filter(item => item.length > 0);
+    
+    return bullets;
+  };
 
   // Parse the action text into structured steps
   const parseActionSteps = (action: string | null) => {
     if (!action) return [];
     
     // Split by day markers (Day 1, Day 2, etc.)
-    const dayPattern = /\*\*Day \d+[^:]*:\*\*/g;
+    const dayPattern = /\*\*Day \d+[^:]*:\*\*|\*\*Week \d+[^:]*:\*\*/g;
     const parts = action.split(dayPattern);
     const headers = action.match(dayPattern) || [];
     
@@ -29,9 +46,24 @@ const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
     return steps;
   };
 
+  const gapBullets = parseBulletPoints(analysisResult?.gap);
+  const automationBullets = parseBulletPoints(analysisResult?.automation);
   const actionSteps = parseActionSteps(analysisResult?.action);
-  const previewSteps = actionSteps.slice(0, 2); // Show first 2 steps initially
+  const previewSteps = actionSteps.slice(0, 2);
   const remainingSteps = actionSteps.slice(2);
+
+  // Format source name for display
+  const formatSourceName = (source?: string): string => {
+    if (!source) return 'Reddit';
+    if (source === 'twitter') return 'Twitter/X';
+    return source.charAt(0).toUpperCase() + source.slice(1);
+  };
+
+  // Count unique sources
+  const uniqueSources = [...new Set(sources.map(s => s.source || 'reddit'))];
+  const sourceCountText = sources.length > 0 
+    ? `${sources.length} real discussion${sources.length > 1 ? 's' : ''} from ${uniqueSources.map(formatSourceName).join(', ')}`
+    : 'real discussions';
 
   const panels = [
     {
@@ -42,7 +74,7 @@ const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
       description: 'What you\'re dealing with',
       content: (
         <div className="space-y-4">
-          <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
+          <p className="text-white/80 leading-relaxed">
             {analysisResult?.overview || 'No overview available'}
           </p>
           <div className="flex items-center gap-2 pt-2">
@@ -65,9 +97,16 @@ const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
       borderClass: 'bento-card-why',
       description: 'The real barriers keeping this manual',
       content: (
-        <div className="text-white/80 leading-relaxed whitespace-pre-wrap">
-          {analysisResult?.gap || 'No gap analysis available'}
-        </div>
+        <ul className="space-y-3">
+          {gapBullets.length > 0 ? gapBullets.map((item, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-flame-red mt-2 shrink-0 shadow-[0_0_8px_rgba(208,0,0,0.6)]" />
+              <span className="text-white/80 leading-relaxed">{item}</span>
+            </li>
+          )) : (
+            <li className="text-white/60">No barriers identified</li>
+          )}
+        </ul>
       ),
     },
     {
@@ -77,9 +116,16 @@ const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
       borderClass: 'bento-card-opportunity',
       description: 'Specific automation paths',
       content: (
-        <div className="text-white/80 leading-relaxed whitespace-pre-wrap">
-          {analysisResult?.automation || 'No automation opportunities identified'}
-        </div>
+        <ul className="space-y-3">
+          {automationBullets.length > 0 ? automationBullets.map((item, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-flame-orange mt-2 shrink-0 shadow-[0_0_8px_rgba(232,93,4,0.6)]" />
+              <span className="text-white/80 leading-relaxed">{item}</span>
+            </li>
+          )) : (
+            <li className="text-white/60">No automation opportunities identified</li>
+          )}
+        </ul>
       ),
     },
     {
@@ -99,7 +145,7 @@ const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
                 </span>
                 <h4 className="font-semibold text-flame-yellow">{step.header}</h4>
               </div>
-              <p className="text-white/80 text-sm ml-9 leading-relaxed whitespace-pre-wrap">
+              <p className="text-white/80 text-sm ml-9 leading-relaxed">
                 {step.content}
               </p>
             </div>
@@ -124,7 +170,7 @@ const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
                           </span>
                           <h4 className="font-semibold text-flame-yellow">{step.header}</h4>
                         </div>
-                        <p className="text-white/80 text-sm ml-9 leading-relaxed whitespace-pre-wrap">
+                        <p className="text-white/80 text-sm ml-9 leading-relaxed">
                           {step.content}
                         </p>
                       </div>
@@ -153,10 +199,10 @@ const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
             </>
           )}
 
-          {/* If no structured steps, show raw text */}
+          {/* If no structured steps, show message */}
           {actionSteps.length === 0 && (
-            <div className="text-white/80 leading-relaxed whitespace-pre-wrap">
-              {analysisResult?.action || 'No action steps available'}
+            <div className="text-white/60 text-center py-4">
+              No structured action plan available
             </div>
           )}
         </div>
@@ -197,7 +243,7 @@ const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
       </motion.div>
 
       {/* Bento Grid */}
-      <div className="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 relative z-10">
+      <div className="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
         {panels.map((panel, index) => (
           <motion.div
             key={panel.id}
@@ -226,6 +272,39 @@ const Dashboard = ({ onViewChange, analysisResult }: DashboardProps) => {
           </motion.div>
         ))}
       </div>
+
+      {/* Trust Signal - Source Links */}
+      {sources.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.4 }}
+          className="max-w-6xl mx-auto w-full mt-8 relative z-10"
+        >
+          <div className="glass-card p-4 flex items-start gap-3 flex-wrap">
+            <CheckCircle2 className="w-5 h-5 text-flame-yellow shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <span className="text-white/70 text-sm block mb-2">
+                ✓ Insights grounded in {sourceCountText}
+              </span>
+              <div className="flex items-center gap-3 flex-wrap">
+                {sources.slice(0, 5).map((source, i) => (
+                  <a
+                    key={i}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-flame-orange hover:text-flame-yellow text-sm flex items-center gap-1.5 transition-colors group"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    <span>{formatSourceName(source.source)} Discussion {i + 1}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Ambient background glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
