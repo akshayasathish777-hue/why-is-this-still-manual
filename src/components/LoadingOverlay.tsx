@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
-import Logo from './Logo';
-import logoImage from '@/assets/logo.png';
+import { Flame } from 'lucide-react';
 
 interface LoadingOverlayProps {
   message?: string;
@@ -29,10 +28,11 @@ const LoadingOverlay = ({
         }}
         className="flex flex-col items-center"
       >
-        <img 
-          src={logoImage}
-          alt="Loading"
-          className="w-20 h-20 object-contain filter drop-shadow-[0_0_30px_rgba(255,186,8,0.6)]"
+        <Flame 
+          className="w-20 h-20 text-flame-orange"
+          style={{
+            filter: 'drop-shadow(0 0 30px rgba(255,186,8,0.6))'
+          }}
         />
         <motion.p 
           className="headline-fire mt-6 font-medium text-xl"

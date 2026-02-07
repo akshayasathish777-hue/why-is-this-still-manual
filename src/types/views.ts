@@ -4,6 +4,13 @@ export type SourceFilter = SourceType | 'all';
 
 export type ViewType = 'landing' | 'solver' | 'builder' | 'dashboard';
 
+// Sentiment analysis scores
+export interface SentimentScores {
+  frustration_level: number;
+  urgency_score: number;
+  willingness_to_pay: number;
+}
+
 // Base problem data structure
 export interface ProblemData {
   id: string;
@@ -22,6 +29,7 @@ export interface ProblemData {
   upvotes?: number;
   is_saved?: boolean;
   saved_at?: string;
+  sentiment?: SentimentScores | null;
 }
 
 // Firecrawl search result
@@ -43,6 +51,7 @@ export interface GeminiResponse {
   automation: string;
   action: string;
   source_url?: string;
+  sentiment?: SentimentScores;
 }
 
 // Saved problem extends base with user data

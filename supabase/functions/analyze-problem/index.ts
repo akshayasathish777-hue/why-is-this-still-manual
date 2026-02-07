@@ -22,6 +22,12 @@ interface SearchResult {
   source: SourceType;
 }
 
+interface SentimentScores {
+  frustration_level: number;
+  urgency_score: number;
+  willingness_to_pay: number;
+}
+
 interface AnalysisResult {
   title: string;
   domain: string;
@@ -31,6 +37,7 @@ interface AnalysisResult {
   automation: string;
   action: string;
   source_url: string;
+  sentiment?: SentimentScores;
 }
 
 // Search a single source via Firecrawl
@@ -212,6 +219,14 @@ Deno.serve(async (req) => {
     // Step 2: Analyze with Gemini via Lovable AI Gateway
     console.log("[analyze-problem] Step 2: Analyzing with Gemini...");
 
+    const sentimentInstructions = `
+Additionally, analyze the emotional intensity of the discussions and provide sentiment scores:
+- frustration_level (1-10): How frustrated/annoyed are people about this problem?
+- urgency_score (1-10): How urgent is the need for a solution?
+- willingness_to_pay (1-10): How likely would they pay for a solution?
+
+Include these scores in a "sentiment" object in your response.`;
+
     const systemPrompt =
       mode === "solver"
         ? `You are an expert analyst who identifies manual workflow problems and automation opportunities.
@@ -224,7 +239,10 @@ Deno.serve(async (req) => {
            - overview: Summary of the problem and its impact (2-3 sentences)
            - gap: Why this is still done manually - root causes. Reference specific pain points from the discussions. (2-3 bullet points as a string)
            - automation: How AI/automation could solve this. Mention specific tools like GPT-4, Zapier, Airtable, etc. (2-3 bullet points as a string)
-           - action: Concrete Day-1 next steps to automate - be specific, not vague. (2-3 numbered steps as a string)`
+           - action: Concrete Day-1 next steps to automate - be specific, not vague. (2-3 numbered steps as a string)
+           - sentiment: An object with frustration_level, urgency_score, and willingness_to_pay (each 1-10)
+           
+           ${sentimentInstructions}`
         : `You are an expert at discovering real-world problems that could be solved with software.
            Analyze the discussions from Reddit, Twitter/X, and Quora and identify 3 distinct problems people are struggling with.
            
@@ -236,8 +254,11 @@ Deno.serve(async (req) => {
            - gap: Why no good solution exists yet based on thread analysis
            - automation: AI opportunity based on expressed needs in the threads
            - action: First step to validate/build this solution
+           - sentiment: An object with frustration_level, urgency_score, and willingness_to_pay (each 1-10)
            
-           Make each problem distinct and valuable. Focus on problems where AI could provide a breakthrough solution.`;
+           Make each problem distinct and valuable. Focus on problems where AI could provide a breakthrough solution.
+           
+           ${sentimentInstructions}`;
 
     const geminiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -345,6 +366,7 @@ Deno.serve(async (req) => {
         source_type: matchingResult?.source || "reddit",
         source_url: result.source_url || matchingResult?.url || "",
         search_query: query,
+        sentiment: result.sentiment || null,
       };
     });
 

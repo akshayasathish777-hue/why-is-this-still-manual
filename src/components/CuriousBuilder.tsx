@@ -1,6 +1,19 @@
 import { useState, KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Search, Sparkles, ExternalLink, Download, Bookmark } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Search, 
+  Sparkles, 
+  ExternalLink, 
+  Download, 
+  Bookmark,
+  Frown,
+  Zap,
+  DollarSign,
+  ArrowUpDown,
+  MessageSquare,
+  HelpCircle
+} from 'lucide-react';
 import type { ViewType, SourceFilter, SourceType, CuratedProblem } from '@/types/views';
 import type { User } from '@supabase/supabase-js';
 import { exportProblemsAsJSON, exportProblemsAsCSV } from '@/lib/api/analyze';
@@ -29,10 +42,58 @@ const filterOptions: { id: SourceFilter; label: string }[] = [
   { id: 'quora', label: 'Quora' },
 ];
 
+type SortOption = 'recent' | 'frustration' | 'urgency' | 'wtp';
+
+const sortOptions: { id: SortOption; label: string }[] = [
+  { id: 'recent', label: 'Most Recent' },
+  { id: 'frustration', label: 'Highest Frustration' },
+  { id: 'urgency', label: 'Most Urgent' },
+  { id: 'wtp', label: 'Best WTP' },
+];
+
+const SourceIcon = ({ source }: { source: string }) => {
+  switch (source) {
+    case 'reddit':
+      return <MessageSquare className="w-3 h-3 text-[#FF4500]" />;
+    case 'twitter':
+      return <MessageSquare className="w-3 h-3 text-[#1DA1F2]" />;
+    case 'quora':
+      return <HelpCircle className="w-3 h-3 text-[#B92B27]" />;
+    default:
+      return null;
+  }
+};
+
+const SentimentBar = ({ value, icon: Icon, label }: { value: number; icon: React.ElementType; label: string }) => {
+  const getColor = (val: number) => {
+    if (val <= 3) return 'rgba(59, 130, 246, 0.8)'; // blue
+    if (val <= 7) return 'rgba(251, 191, 36, 0.8)'; // yellow
+    return 'rgba(239, 68, 68, 0.8)'; // red
+  };
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Icon className="w-3.5 h-3.5 text-flame-yellow" />
+      <span className="text-xs text-white/50 w-20">{label}</span>
+      <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+        <div 
+          className="h-full rounded-full transition-all"
+          style={{ 
+            width: `${(value / 10) * 100}%`,
+            backgroundColor: getColor(value)
+          }}
+        />
+      </div>
+      <span className="text-xs text-flame-yellow w-8 text-right">{value}/10</span>
+    </div>
+  );
+};
+
 const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems, onSelectProblem, onSaveSearch, user }: CuriousBuilderProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSource, setActiveSource] = useState<SourceFilter>('all');
   const [selectedSearchSources, setSelectedSearchSources] = useState<SourceType[]>(['reddit']);
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
 
   const toggleSearchSource = (source: SourceType) => {
     setSelectedSearchSources((prev) => {
@@ -46,12 +107,26 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
     });
   };
 
-  const filteredProblems = problems.filter(problem => {
-    const matchesSearch = problem.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      problem.domain.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSource = activeSource === 'all' || problem.source_type === activeSource;
-    return matchesSearch && matchesSource;
-  });
+  const filteredProblems = problems
+    .filter(problem => {
+      const matchesSearch = problem.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        problem.domain.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSource = activeSource === 'all' || problem.source_type === activeSource;
+      return matchesSearch && matchesSource;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'frustration':
+          return (b.sentiment?.frustration_level || 0) - (a.sentiment?.frustration_level || 0);
+        case 'urgency':
+          return (b.sentiment?.urgency_score || 0) - (a.sentiment?.urgency_score || 0);
+        case 'wtp':
+          return (b.sentiment?.willingness_to_pay || 0) - (a.sentiment?.willingness_to_pay || 0);
+        case 'recent':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -161,7 +236,7 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
           </div>
         </div>
 
-        {/* Filter Pills + Export Buttons */}
+        {/* Filter Pills + Sort + Export */}
         <div className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-3 flex-wrap justify-center w-full">
             <div className="flex items-center gap-3 flex-wrap justify-center flex-1">
@@ -179,6 +254,24 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
                 </button>
               ))}
             </div>
+            
+            {/* Sort Dropdown */}
+            {filteredProblems.length > 0 && (
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="w-4 h-4 text-flame-yellow" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="bg-flame-yellow/10 text-flame-yellow border border-flame-yellow/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-flame-yellow/50"
+                >
+                  {sortOptions.map((opt) => (
+                    <option key={opt.id} value={opt.id} className="bg-black text-white">
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             
             {/* Export Buttons */}
             {filteredProblems.length > 0 && (
@@ -256,6 +349,27 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
                     {problem.overview}
                   </p>
                 )}
+
+                {/* Sentiment Bars */}
+                {problem.sentiment && (
+                  <div className="space-y-1.5 mb-4">
+                    <SentimentBar 
+                      value={problem.sentiment.frustration_level || 0} 
+                      icon={Frown} 
+                      label="Frustration" 
+                    />
+                    <SentimentBar 
+                      value={problem.sentiment.urgency_score || 0} 
+                      icon={Zap} 
+                      label="Urgency" 
+                    />
+                    <SentimentBar 
+                      value={problem.sentiment.willingness_to_pay || 0} 
+                      icon={DollarSign} 
+                      label="WTP" 
+                    />
+                  </div>
+                )}
                 
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="px-3 py-1 rounded-full bg-flame-orange/10 text-flame-orange text-sm border border-flame-orange/20">
@@ -267,7 +381,8 @@ const CuriousBuilder = ({ onViewChange, problems, isLoading, onDiscoverProblems,
                     </span>
                   )}
                   {problem.source_type && (
-                    <span className="text-white/30 text-xs capitalize">
+                    <span className="flex items-center gap-1 text-white/30 text-xs">
+                      <SourceIcon source={problem.source_type} />
                       via {problem.source_type === 'twitter' ? 'Twitter/X' : problem.source_type}
                     </span>
                   )}

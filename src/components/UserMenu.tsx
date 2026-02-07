@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Bookmark, Bell, LogOut, ChevronDown } from 'lucide-react';
+import { BookmarkCheck, Bell, LogOut, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
@@ -89,7 +89,7 @@ const UserMenu = ({ onShowSavedSearches, onShowEmailPreferences }: UserMenuProps
                 }}
                 className="w-full flex items-center gap-3 px-3 py-2 text-white/80 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-sm"
               >
-                <Bookmark className="w-4 h-4 text-flame-yellow" />
+                <BookmarkCheck className="w-4 h-4 text-flame-yellow" />
                 My Saved Searches
               </button>
 

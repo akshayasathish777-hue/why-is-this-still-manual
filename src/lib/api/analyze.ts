@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { SourceType, SourceFilter, AnalyzedProblem, CuratedProblem } from "@/types/views";
+import type { SourceType, SourceFilter, AnalyzedProblem, CuratedProblem, SentimentScores } from "@/types/views";
 
 export type { AnalyzedProblem };
 
@@ -70,7 +70,11 @@ export const analyzeApi = {
       return [];
     }
 
-    return (data as CuratedProblem[]) || [];
+    // Transform database response to match our types
+    return (data || []).map((item: Record<string, unknown>) => ({
+      ...item,
+      sentiment: item.sentiment as SentimentScores | null,
+    })) as CuratedProblem[];
   },
 };
 
@@ -95,14 +99,15 @@ export function exportProblemsAsJSON(problems: CuratedProblem[]): void {
 }
 
 /**
- * Export problems as CSV file
+ * Export problems as CSV file (includes sentiment data)
  */
 export function exportProblemsAsCSV(problems: CuratedProblem[]): void {
-  const headers = ["Title", "Domain", "Role", "Overview", "Gap", "Automation", "Action", "Source", "URL", "Created"];
+  const headers = ["Title", "Domain", "Role", "Overview", "Gap", "Automation", "Action", "Source", "URL", "Frustration", "Urgency", "WTP", "Created"];
   
-  const escapeCSV = (value: string | null | undefined): string => {
-    if (!value) return '""';
-    const escaped = value.replace(/"/g, '""');
+  const escapeCSV = (value: string | number | null | undefined): string => {
+    if (value === null || value === undefined) return '""';
+    const str = String(value);
+    const escaped = str.replace(/"/g, '""');
     return `"${escaped}"`;
   };
   
@@ -116,6 +121,9 @@ export function exportProblemsAsCSV(problems: CuratedProblem[]): void {
     escapeCSV(p.action),
     escapeCSV(p.source_type),
     escapeCSV(p.source_url),
+    escapeCSV(p.sentiment?.frustration_level ?? 'N/A'),
+    escapeCSV(p.sentiment?.urgency_score ?? 'N/A'),
+    escapeCSV(p.sentiment?.willingness_to_pay ?? 'N/A'),
     escapeCSV(p.created_at),
   ].join(","));
   
