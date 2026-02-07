@@ -1,4 +1,6 @@
 import type { Config } from "tailwindcss";
+import animate from "tailwindcss-animate";
+
 
 export default {
   darkMode: ["class"],
@@ -71,15 +73,15 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "pulse-fire": {
-          "0%, 100%": {
-            transform: "scale(1)",
-            filter: "drop-shadow(0 0 15px #ffba08) drop-shadow(0 0 30px rgba(232, 93, 4, 0.5))",
-          },
-          "50%": {
-            transform: "scale(1.15)",
-            filter: "drop-shadow(0 0 25px #ffba08) drop-shadow(0 0 50px rgba(232, 93, 4, 0.7)) drop-shadow(0 0 80px rgba(255, 186, 8, 0.4))",
-          },
+        "pulse-fire": {   
+  "0%, 100%": {
+    transform: "scale(1)",
+    filter: "drop-shadow(0 0 15px #ffba08) drop-shadow(0 0 30px rgba(232, 93, 4, 0.5))",
+  },
+  "50%": {
+    transform: "scale(1.15)",
+    filter: "drop-shadow(0 0 25px #ffba08) drop-shadow(0 0 50px rgba(232, 93, 4, 0.7)) drop-shadow(0 0 80px rgba(255, 186, 8, 0.4))",
+  },
         },
         "glow-pulse": {
           "0%, 100%": {
@@ -126,5 +128,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [animate],
 } satisfies Config;

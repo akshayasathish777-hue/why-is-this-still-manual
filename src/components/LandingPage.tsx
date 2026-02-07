@@ -31,58 +31,25 @@ const LandingPage = ({ onViewChange }: LandingPageProps) => {
       {/* Animated Mesh Gradient Background */}
       <div className="mesh-gradient-bg" />
 
-      {/* Hero Section */}
+        {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="text-center mb-8 relative z-10 max-w-5xl mx-auto"
+        className="text-center mb-12 relative z-10"
       >
-        {/* Flame Logo */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-          className="flex justify-center mb-8"
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="inline-flex items-center gap-2 mb-6"
         >
-          <motion.div
-            animate={{
-              scale: [1, 1.05, 1],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="relative"
-          >
-            <Flame 
-              className="w-[120px] h-[120px] text-flame-orange"
-              style={{
-                filter: 'drop-shadow(0 0 40px rgba(255,186,8,0.6))'
-              }}
-            />
-            {/* Ambient glow behind flame */}
-            <div 
-              className="absolute inset-0 bg-gradient-radial from-flame-yellow/30 to-transparent rounded-full blur-xl -z-10 scale-150"
-            />
-          </motion.div>
+          <Flame className="w-10 h-10 text-flame-yellow flame-bloom" />
         </motion.div>
         
-        {/* Main Headline */}
-        <motion.h1 
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 tracking-tight"
-          style={{
-            color: '#ffba08',
-            textShadow: '0 0 20px #ffba08, 0 0 40px #e85d04',
-            letterSpacing: '-0.02em',
-          }}
-        >
+        <h1 className="headline-fire text-4xl md:text-6xl lg:text-7xl mb-4">
           Why Is This Still Manual?
-        </motion.h1>
+        </h1>
 
         {/* Rotating Catchphrase */}
         <motion.div
