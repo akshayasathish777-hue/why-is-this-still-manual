@@ -40,3 +40,6 @@ USING (auth.uid() = user_id);
 
 -- Add sentiment column to curated_problems
 ALTER TABLE curated_problems ADD COLUMN IF NOT EXISTS sentiment JSONB;
+-- In Supabase SQL Editor
+ALTER TABLE curated_problems 
+ALTER COLUMN action TYPE jsonb USING action::jsonb;

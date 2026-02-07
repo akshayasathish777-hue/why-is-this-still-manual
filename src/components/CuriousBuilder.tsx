@@ -15,9 +15,16 @@ import {
   HelpCircle
 } from 'lucide-react';
 import type { ViewType, SourceFilter, SourceType, CuratedProblem } from '@/types/views';
-import type { User } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { exportProblemsAsJSON, exportProblemsAsCSV } from '@/lib/api/analyze';
 import SubredditRecommendations from './SubredditRecommendations';
+
+// Manual type fix for Supabase User
+interface User {
+  id: string;
+  email?: string;
+  [key: string]: any;
+}
 
 interface CuriousBuilderProps {
   onViewChange: (view: ViewType) => void;
@@ -25,6 +32,7 @@ interface CuriousBuilderProps {
   isLoading: boolean;
   onDiscoverProblems: (query: string, sources: SourceType[]) => Promise<void>;
   onSelectProblem: (problem: CuratedProblem) => void;
+  initialQuery?: string;
   onSaveSearch?: (query: string, sources: SourceType[]) => void;
   user?: User | null;
 }

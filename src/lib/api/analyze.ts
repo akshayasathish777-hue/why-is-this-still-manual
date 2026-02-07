@@ -9,6 +9,36 @@ export interface SentimentScore {
   willingness_to_pay: number;
 }
 
+export interface ActionResource {
+  type: 'tutorial' | 'tool' | 'template' | 'article';
+  title: string;
+  url: string;
+  platform?: string;
+  cost?: string;
+}
+
+export interface ExistingSolution {
+  name: string;
+  url: string;
+  cost: string;
+  description: string;
+}
+
+export interface BuildOpportunity {
+  viable: boolean;
+  reason: string;
+  search_query: string;
+}
+
+export interface ActionPlan {
+  diy: {
+    description: string;
+    resources: ActionResource[];
+  };
+  existing_solutions: ExistingSolution[];
+  build_opportunity: BuildOpportunity;
+}
+
 export type AnalyzedProblem = {
   title: string;
   domain: string;
@@ -16,9 +46,9 @@ export type AnalyzedProblem = {
   overview: string;
   gap: string;
   automation: string;
-  action: string;
-  sentiment?: SentimentScore;  // Sentiment analysis scores
-  id?: string;                  // Database UUID (for trend tracking)
+  action: ActionPlan | string;  // Can be ActionPlan (new format) or string (legacy)
+  sentiment?: SentimentScore;
+  id?: string;
 };
 
 export interface AnalysisSource {
@@ -140,7 +170,7 @@ export function exportProblemsAsCSV(problems: CuratedProblem[]): void {
     escapeCSV(p.overview),
     escapeCSV(p.gap),
     escapeCSV(p.automation),
-    escapeCSV(p.action),
+    escapeCSV(typeof p.action === 'string' ? p.action : JSON.stringify(p.action)),
     escapeCSV(p.source_type),
     escapeCSV(p.source_url),
     escapeCSV(p.sentiment?.frustration_level ?? 'N/A'),

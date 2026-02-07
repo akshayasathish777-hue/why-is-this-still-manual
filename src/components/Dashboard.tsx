@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Eye, AlertTriangle, Zap, ArrowRight, ChevronDown, ChevronUp, CheckCircle2, ExternalLink } from 'lucide-react';
 import type { ViewType } from '@/types/views';
-import type { AnalyzedProblem } from '@/lib/api/analyze';
+import type { AnalyzedProblem, ActionPlan } from '@/lib/api/analyze';
+import ActionButtons from './ActionButton';
 
 interface DashboardProps {
-  onViewChange: (view: ViewType) => void;
+  onViewChange: (view: ViewType, query?: string) => void;
   analysisResult: AnalyzedProblem | null;
   sources?: Array<{ url: string; title: string; source?: string }> | undefined;
 }
@@ -61,7 +62,12 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
 
   const gapBullets = parseBulletPoints(analysisResult?.gap);
   const automationBullets = parseBulletPoints(analysisResult?.automation);
-  const nextStepsData = parseNextSteps(analysisResult?.action);
+
+  // Check if action is the new ActionPlan format or legacy string
+  const isActionPlan = analysisResult?.action && typeof analysisResult.action === 'object';
+  const actionAsString = typeof analysisResult?.action === 'string' ? analysisResult.action : null;
+  
+  const nextStepsData = parseNextSteps(actionAsString);
   
   // For structured steps, show 2 preview + rest expandable
   // For bullets, show 3 preview + rest expandable
@@ -152,9 +158,17 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
       borderClass: 'bento-card-next',
       description: 'Your action plan',
       content: (
-        <div className="space-y-4">
-          {nextStepsData.steps.length > 0 ? (
-            <>
+        <div>
+          {isActionPlan ? (
+            <ActionButtons 
+              action={analysisResult.action as ActionPlan}
+              onBuildClick={(query) => {
+                // Navigate to builder mode with pre-filled search
+                onViewChange('builder', query);
+              }}
+            />
+          ) : nextStepsData.steps.length > 0 ? (
+            <div className="space-y-4">
               {/* Show Preview Steps */}
               {nextStepsData.structured ? (
                 // Structured format with headers
@@ -248,10 +262,10 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
                   </button>
                 </>
               )}
-            </>
+            </div>
           ) : (
             <div className="text-white/60 text-center py-4">
-              No action steps available
+              No action plan available
             </div>
           )}
         </div>

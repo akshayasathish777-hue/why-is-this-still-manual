@@ -24,6 +24,7 @@ const Index = () => {
   const [isProblemsLoading, setIsProblemsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalyzedProblem | null>(null);
   const [analysisSources, setAnalysisSources] = useState<AnalysisSource[]>([]);
+  const [builderQuery, setBuilderQuery] = useState<string>(''); // NEW: Track the search query
   const { toast } = useToast();
 
   // Fetch problems from database
@@ -54,9 +55,18 @@ const Index = () => {
     }).join(', ');
   };
 
+  // NEW handleViewChange: Captures queries when moving to Builder
+  const handleViewChange = (view: ViewType, query?: string) => {
+    if (view === 'builder' && query) {
+      setBuilderQuery(query);
+    }
+    setCurrentView(view);
+  };
+
   // Discover new problems in builder mode
   const handleDiscoverProblems = async (query: string, sources: SourceType[]) => {
     setIsProblemsLoading(true);
+    setBuilderQuery(query); // Sync the query state during discovery
     try {
       const response = await analyzeApi.analyzeProblem(query, 'builder', sources);
       if (response.success && response.data) {
@@ -121,13 +131,8 @@ const Index = () => {
     }
   };
 
-  const handleViewChange = (view: ViewType) => {
-    setCurrentView(view);
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Main Content */}
       <AnimatePresence mode="wait">
         {currentView === 'loading' && (
           <LoadingOverlay 
@@ -179,6 +184,7 @@ const Index = () => {
               problems={problems}
               isLoading={isProblemsLoading}
               onDiscoverProblems={handleDiscoverProblems}
+              initialQuery={builderQuery} // NEW: Pass the saved query back in
               onSelectProblem={(problem) => {
                 setAnalysisResult(problem as AnalyzedProblem);
                 setCurrentView('dashboard');
@@ -197,7 +203,7 @@ const Index = () => {
             transition={{ duration: 0.3 }}
           >
             <Dashboard 
-              onViewChange={handleViewChange} 
+              onViewChange={handleViewChange} // Passes the back button logic
               analysisResult={analysisResult}
               sources={analysisSources}
             />

@@ -235,7 +235,70 @@ You MUST respond with a JSON object containing these exact fields:
 - overview: Explain what they're doing and why in 2-3 sentences. Be specific about the steps involved.
 - gap: Explain WHY it's still manual in 2-3 sentences. Use evidence from the discussions. Be honest about the real barriers.
 - automation: Give THREE specific automation paths, ordered by difficulty. Include exact tools, costs, and what they do. Format as: **Quick Win (No-Code):** [details] **Better Solution (Low-Code):** [details] **Best Solution (Full Automation):** [details]
-- action: Give a step-by-step action plan. NOT vague advice. Give the ACTUAL first 5 steps they should do this week. Format as: **This Week:** Day 1: [task] Day 2: [task] etc. **Next Week:** [milestone]
+- action: A JSON object with role-specific solutions. Format:
+{
+  "diy": {
+    "description": "Build it yourself with [specific approach]",
+    "resources": [
+      {"type": "tutorial", "title": "...", "url": "...", "platform": "YouTube"},
+      {"type": "tool", "title": "...", "url": "...", "cost": "$X/mo or free"},
+      {"type": "template", "title": "...", "url": "...", "platform": "Notion/Airtable/etc"}
+    ]
+  },
+  "existing_solutions": [
+    {"name": "Tool Name", "url": "...", "cost": "$X/mo", "description": "What it does"},
+    {"name": "Alternative", "url": "...", "cost": "Free tier + $Y", "description": "..."}
+  ],
+  "build_opportunity": {
+    "viable": true/false,
+    "reason": "Why this could be a product",
+    "search_query": "Suggested query for Builder mode"
+  }
+}
+    (e.g., "action": {
+    "diy": {
+      "description": "Build a custom automation using Make.com + Instagram API",
+      "resources": [
+        {
+          "type": "tutorial",
+          "title": "Instagram API to Google Sheets Automation",
+          "url": "https://youtube.com/watch?v=example",
+          "platform": "YouTube"
+        },
+        {
+          "type": "tool",
+          "title": "Make.com (formerly Integromat)",
+          "url": "https://make.com",
+          "cost": "$9/mo (free tier available)"
+        },
+        {
+          "type": "template",
+          "title": "Instagram Analytics Dashboard Template",
+          "url": "https://notion.so/templates/instagram",
+          "platform": "Notion"
+        }
+      ]
+    },
+    "existing_solutions": [
+      {
+        "name": "Iconosquare",
+        "url": "https://iconosquare.com",
+        "cost": "$49/mo",
+        "description": "Automated Instagram analytics with scheduled reports"
+      },
+      {
+        "name": "Later",
+        "url": "https://later.com",
+        "cost": "$25/mo",
+        "description": "Social media scheduler with built-in analytics export"
+      }
+    ],
+    "build_opportunity": {
+      "viable": true,
+      "reason": "Small agencies need this but can't afford $500/mo enterprise tools",
+      "search_query": "Instagram analytics automation for agencies"
+    }
+  },)
 - sentiment: An object with frustration_level (1-10), urgency_score (1-10), and willingness_to_pay (1-10)`;
 
       userPrompt = `Analyze these discussions about "${query}" and create a detailed, specific analysis.
