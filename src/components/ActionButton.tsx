@@ -50,7 +50,7 @@ const ActionButtons = ({ action, onBuildClick }: ActionButtonsProps) => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-4 space-y-3"
+              className="mt-4 space-y-3 pl-13"
             >
               {action.diy.resources.map((resource, i) => {
                 const Icon = getResourceIcon(resource.type);
@@ -113,7 +113,7 @@ const ActionButtons = ({ action, onBuildClick }: ActionButtonsProps) => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-4 space-y-3"
+              className="mt-4 space-y-3 pl-13"
             >
               {action.existing_solutions.map((solution, i) => (
                 <a

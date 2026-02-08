@@ -106,7 +106,8 @@ export const analyzeApi = {
     let query = supabase
       .from("curated_problems")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(50);
 
     if (sourceFilter && sourceFilter !== "all") {
       query = query.eq("source_type", sourceFilter);
