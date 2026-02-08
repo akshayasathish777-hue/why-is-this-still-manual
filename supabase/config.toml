@@ -2,3 +2,6 @@ project_id = "rbsdxenqbhxgrhcyhorv"
 
 [functions.analyze-problem]
 verify_jwt = false
+
+[functions.analyze-problem.invoke]
+verify_jwt = false
