@@ -120,14 +120,61 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Authentication: Validate JWT token
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // @ts-ignore
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    // @ts-ignore
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Create client with user's auth token to validate
+    const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid authentication" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+    console.log(`Authenticated user: ${userId}`);
+
     const body = await req.json();
     const query = body.query || "";
     const mode = body.mode || "solver";
     const sources = body.sources || ["reddit"];
 
+    // Input validation
     if (!query) {
       return new Response(
         JSON.stringify({ success: false, error: "Query required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (query.length > 500) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Query too long (max 500 characters)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -137,11 +184,9 @@ Deno.serve(async (req) => {
     // @ts-ignore
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     // @ts-ignore
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    // @ts-ignore
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!FIRECRAWL_API_KEY || !LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    if (!FIRECRAWL_API_KEY || !LOVABLE_API_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing API keys" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
