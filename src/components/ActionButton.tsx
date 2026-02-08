@@ -1,219 +1,150 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Wrench, ShoppingBag, Lightbulb, ExternalLink, Play, FileText, Package, ChevronDown, ChevronUp, CheckCircle, XCircle } from 'lucide-react';
+import { ExternalLink, Wrench, Package, Rocket, CheckCircle2, XCircle, Search } from 'lucide-react';
 import type { ActionPlan } from '@/lib/api/analyze';
 
 interface ActionButtonsProps {
-  action: ActionPlan | string;
-  onBuildClick: (query: string) => void;
+  action: ActionPlan;
+  onBuildClick?: (query: string) => void;
 }
 
 const ActionButtons = ({ action, onBuildClick }: ActionButtonsProps) => {
-  const [expandedSection, setExpandedSection] = useState<'diy' | 'existing' | null>(null);
-
-  // Parse action if it's a string (JSON)
-  const parsedAction: ActionPlan | null = (() => {
-    if (typeof action === 'object' && action !== null) {
-      return action as ActionPlan;
-    }
-    if (typeof action === 'string') {
-      try {
-        return JSON.parse(action) as ActionPlan;
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  })();
-
-  // If we couldn't parse, show fallback
-  if (!parsedAction) {
-    return (
-      <div className="text-white/60 text-center py-4">
-        <p>Action plan format not recognized</p>
-      </div>
-    );
-  }
-
-  const getResourceIcon = (type: string) => {
-    switch (type) {
-      case 'tutorial': return Play;
-      case 'tool': return Package;
-      case 'template': return FileText;
-      default: return ExternalLink;
-    }
-  };
-
-  const { diy, existing_solutions, build_opportunity } = parsedAction;
-
   return (
-    <div className="space-y-4">
-      {/* DIY Path */}
-      {diy && (
-        <div className="glass-card p-4 border border-flame-orange/30 rounded-lg">
-          <button
-            onClick={() => setExpandedSection(expandedSection === 'diy' ? null : 'diy')}
-            className="w-full flex items-center justify-between text-left"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-flame-orange/20 flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-flame-orange" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-white">Build It Yourself</h4>
-                <p className="text-sm text-white/60 line-clamp-2">{diy.description}</p>
-              </div>
-            </div>
-            {expandedSection === 'diy' ? (
-              <ChevronUp className="w-5 h-5 text-white/40 shrink-0 ml-2" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-white/40 shrink-0 ml-2" />
-            )}
-          </button>
-
-          <AnimatePresence>
-            {expandedSection === 'diy' && diy.resources && diy.resources.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-4 space-y-3 overflow-hidden"
-              >
-                {diy.resources.map((resource, i) => {
-                  const Icon = getResourceIcon(resource.type);
-                  return (
-                    <a
-                      key={i}
-                      href={resource.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group"
-                    >
-                      <Icon className="w-4 h-4 text-flame-yellow mt-0.5 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-white text-sm font-medium group-hover:text-flame-yellow transition-colors">
-                            {resource.title}
-                          </span>
-                          <ExternalLink className="w-3 h-3 text-white/40 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          {resource.platform && (
-                            <span className="text-xs text-white/50">{resource.platform}</span>
-                          )}
-                          {resource.cost && (
-                            <span className="text-xs text-flame-orange">{resource.cost}</span>
-                          )}
-                        </div>
-                      </div>
-                    </a>
-                  );
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* Existing Solutions */}
-      {existing_solutions && existing_solutions.length > 0 && (
-        <div className="glass-card p-4 border border-white/20 rounded-lg">
-          <button
-            onClick={() => setExpandedSection(expandedSection === 'existing' ? null : 'existing')}
-            className="w-full flex items-center justify-between text-left"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                <ShoppingBag className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-white">Ready-Made Solutions</h4>
-                <p className="text-sm text-white/60">{existing_solutions.length} tool{existing_solutions.length > 1 ? 's' : ''} found</p>
-              </div>
-            </div>
-            {expandedSection === 'existing' ? (
-              <ChevronUp className="w-5 h-5 text-white/40 shrink-0 ml-2" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-white/40 shrink-0 ml-2" />
-            )}
-          </button>
-
-          <AnimatePresence>
-            {expandedSection === 'existing' && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-4 space-y-3 overflow-hidden"
-              >
-                {existing_solutions.map((solution, i) => (
-                  <a
-                    key={i}
-                    href={solution.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group block"
-                  >
-                    <Package className="w-4 h-4 text-white mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-white text-sm font-medium group-hover:text-flame-yellow transition-colors">
-                          {solution.name}
-                        </span>
-                        <ExternalLink className="w-3 h-3 text-white/40 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                      </div>
-                      <p className="text-xs text-white/60 mt-1 line-clamp-2">{solution.description}</p>
-                      <span className="text-xs text-flame-orange mt-1 inline-block">{solution.cost}</span>
-                    </div>
-                  </a>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* Build Opportunity */}
-      {build_opportunity && (
-        <div className={`glass-card p-4 border rounded-lg ${build_opportunity.viable ? 'border-flame-yellow/30 bg-flame-yellow/5' : 'border-white/10 bg-white/5'}`}>
-          <div className="flex items-start gap-3 mb-3">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${build_opportunity.viable ? 'bg-flame-yellow/20' : 'bg-white/10'}`}>
-              {build_opportunity.viable ? (
-                <Lightbulb className="w-5 h-5 text-flame-yellow" />
-              ) : (
-                <XCircle className="w-5 h-5 text-white/50" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h4 className={`font-semibold ${build_opportunity.viable ? 'text-flame-yellow' : 'text-white/70'}`}>
-                  Product Opportunity
-                </h4>
-                {build_opportunity.viable ? (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                ) : (
-                  <XCircle className="w-4 h-4 text-red-400" />
-                )}
-              </div>
-              <p className="text-sm text-white/80 mt-1">{build_opportunity.reason}</p>
-            </div>
+    <div className="space-y-6">
+      {/* DIY Section */}
+      {action.diy && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Wrench className="w-5 h-5 text-flame-yellow" />
+            <h3 className="text-lg font-semibold text-flame-yellow">🛠️ DIY Approach</h3>
           </div>
-          {build_opportunity.viable && build_opportunity.search_query && (
-            <button
-              onClick={() => onBuildClick(build_opportunity.search_query)}
-              className="w-full py-3 px-4 rounded-lg bg-flame-yellow/10 hover:bg-flame-yellow/20 text-flame-yellow font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              <Lightbulb className="w-4 h-4" />
-              Explore in Builder Mode
-            </button>
+          
+          {action.diy.description && (
+            <p className="text-white/80 text-sm leading-relaxed mb-3">
+              {action.diy.description}
+            </p>
+          )}
+          
+          {action.diy.resources && action.diy.resources.length > 0 && (
+            <div className="space-y-2">
+              {action.diy.resources.map((resource, i) => (
+                <a
+                  key={i}
+                  href={resource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-flame-yellow/50 transition-all group"
+                >
+                  <ExternalLink className="w-4 h-4 text-flame-yellow shrink-0 mt-0.5 group-hover:translate-x-0.5 transition-transform" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-white font-medium">{resource.title}</span>
+                      {resource.platform && (
+                        <span className="px-2 py-0.5 rounded text-xs bg-flame-yellow/20 text-flame-yellow">
+                          {resource.platform}
+                        </span>
+                      )}
+                      {resource.cost && (
+                        <span className="px-2 py-0.5 rounded text-xs bg-white/10 text-white/70">
+                          {resource.cost}
+                        </span>
+                      )}
+                    </div>
+                    {resource.type && (
+                      <span className="text-white/50 text-xs capitalize">{resource.type}</span>
+                    )}
+                  </div>
+                </a>
+              ))}
+            </div>
           )}
         </div>
       )}
 
-      {/* Empty state if no sections */}
-      {!diy && (!existing_solutions || existing_solutions.length === 0) && !build_opportunity && (
-        <div className="text-white/60 text-center py-4">
-          No action plan details available
+      {/* Existing Solutions Section */}
+      {action.existing_solutions && action.existing_solutions.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Package className="w-5 h-5 text-flame-orange" />
+            <h3 className="text-lg font-semibold text-flame-orange">💼 Existing Solutions</h3>
+          </div>
+          
+          <div className="space-y-2">
+            {action.existing_solutions.map((solution, i) => (
+              <a
+                key={i}
+                href={solution.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-4 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-flame-orange/50 transition-all group"
+              >
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-semibold group-hover:text-flame-orange transition-colors">
+                      {solution.name}
+                    </span>
+                    <ExternalLink className="w-4 h-4 text-flame-orange shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                  {solution.cost && (
+                    <span className="px-3 py-1 rounded-full bg-flame-orange/20 text-flame-orange text-sm font-medium shrink-0">
+                      {solution.cost}
+                    </span>
+                  )}
+                </div>
+                {solution.description && (
+                  <p className="text-white/70 text-sm leading-relaxed">
+                    {solution.description}
+                  </p>
+                )}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Build Opportunity Section */}
+      {action.build_opportunity && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Rocket className="w-5 h-5 text-flame-red" />
+            <h3 className="text-lg font-semibold text-flame-red">🚀 Build Opportunity</h3>
+          </div>
+          
+          <div className={`p-4 rounded-lg border ${
+            action.build_opportunity.viable 
+              ? 'bg-green-500/10 border-green-500/30' 
+              : 'bg-red-500/10 border-red-500/30'
+          }`}>
+            <div className="flex items-start gap-3 mb-3">
+              {action.build_opportunity.viable ? (
+                <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+              ) : (
+                <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`font-semibold ${
+                    action.build_opportunity.viable ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {action.build_opportunity.viable ? 'Worth Building' : 'Not Recommended'}
+                  </span>
+                </div>
+                {action.build_opportunity.reason && (
+                  <p className="text-white/80 text-sm leading-relaxed">
+                    {action.build_opportunity.reason}
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            {action.build_opportunity.viable && action.build_opportunity.search_query && onBuildClick && (
+              <button
+                onClick={() => onBuildClick(action.build_opportunity.search_query)}
+                className="w-full mt-3 py-2.5 px-4 rounded-lg bg-flame-red hover:bg-flame-red/80 text-white font-medium flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+              >
+                <Search className="w-4 h-4" />
+                <span>Explore Similar Problems</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
