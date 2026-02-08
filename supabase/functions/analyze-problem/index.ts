@@ -114,27 +114,17 @@ async function searchMultipleSources(
 }
 
 // @ts-ignore
-// @ts-ignore
-Deno.serve(async (req: Request) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // BYPASS AUTH FOR DEMO: 
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
-    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "";
-    
-    const userId = "demo-user-session"; 
-    console.log("Demo Mode Active: Processing analysis request...");
-
-    // @ts-ignore
     const body = await req.json();
     const query = body.query || "";
     const mode = body.mode || "solver";
     const sources = body.sources || ["reddit"];
 
-    // Input validation
     if (!query) {
       return new Response(
         JSON.stringify({ success: false, error: "Query required" }),
@@ -142,32 +132,16 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    if (query.length > 500) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Query too long (max 500 characters)" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     // @ts-ignore
-    // SAFE KEY FETCHING
-    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || "";
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") || "";
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+    // @ts-ignore
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    // @ts-ignore
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    // @ts-ignore
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    // VALIDATION CHECK
-    if (!FIRECRAWL_API_KEY || !LOVABLE_API_KEY) {
-      console.error("CRITICAL ERROR: Keys are missing in Supabase Secrets");
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "System keys not configured. Please add FIRECRAWL_API_KEY and LOVABLE_API_KEY to Supabase Secrets." 
-        }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!FIRECRAWL_API_KEY || !LOVABLE_API_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
+    if (!FIRECRAWL_API_KEY || !LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing API keys" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -198,47 +172,34 @@ Deno.serve(async (req: Request) => {
       .map((r, i) => `[${r.source.toUpperCase()} ${i + 1}]\n${r.title}\n${r.url}\n${r.snippet}`)
       .join("\n\n---\n\n");
 
-const systemPrompt = mode === "solver"
-  ? `You are an automation expert analyzing a manual workflow. Respond with ONLY valid JSON (no markdown, no code blocks, no explanations).
+    const systemPrompt = mode === "solver"
+      ? `You are an automation expert. Respond with valid JSON (no markdown).
 
-CRITICAL: The "action" field MUST be a JSON object, NOT a string.
-
-Structure:
+Required fields:
+- title: Problem name
+- domain: Industry
+- role: Who faces this
+- overview: What they do (2-3 sentences)
+- gap: Why still manual (2-3 sentences)
+- automation: 3 solutions formatted as **Quick Win:** details **Better:** details **Best:** details
+- action: JSON object with this EXACT structure:
 {
-  "title": "Short problem name",
-  "domain": "Industry category",
-  "role": "Who faces this problem",
-  "overview": "What they're manually doing (2-3 sentences with specific steps)",
-  "gap": "Why it's still manual (2-3 sentences with real barriers from discussions)",
-  "automation": "**Quick Win (No-Code):** Use [Tool X] at $Y/mo to [specific workflow]\\n\\n**Better (Low-Code):** Use [Approach] with [Tech] to [specific workflow]\\n\\n**Best (Full Automation):** Use [Enterprise Tool] at $Z/mo for [complete solution]",
-  "action": {
-    "diy": {
-      "description": "How to build it yourself with specific tools",
-      "resources": [
-        {"type": "tutorial", "title": "Actual tutorial name", "url": "https://youtube.com/specific-video", "platform": "YouTube", "cost": "Free"},
-        {"type": "tool", "title": "Make.com", "url": "https://make.com", "cost": "$9/mo"},
-        {"type": "template", "title": "Template name", "url": "https://real-url.com", "platform": "Notion"}
-      ]
-    },
-    "existing_solutions": [
-      {"name": "Real Tool Name", "url": "https://actualtool.com", "cost": "$49/mo", "description": "Specific feature it provides"}
-    ],
-    "build_opportunity": {
-      "viable": true,
-      "reason": "Specific market gap based on discussions",
-      "search_query": "relevant search for builder mode"
-    }
+  "diy": {
+    "description": "Build approach",
+    "resources": [
+      {"type": "tutorial", "title": "...", "url": "https://...", "platform": "YouTube", "cost": "Free"}
+    ]
   },
-  "sentiment": {"frustration_level": 8, "urgency_score": 7, "willingness_to_pay": 6}
+  "existing_solutions": [
+    {"name": "Tool", "url": "https://...", "cost": "$X/mo", "description": "What it does"}
+  ],
+  "build_opportunity": {
+    "viable": true,
+    "reason": "Market gap",
+    "search_query": "suggested query"
+  }
 }
-
-IMPORTANT RULES:
-1. "action" MUST be a JSON object, never a string
-2. Include 2-3 real resources with actual URLs (search YouTube/Google for real tutorials)
-3. Include 2-3 real existing solutions with actual pricing
-4. Use real tool names (Make.com, Zapier, n8n, etc.)
-5. DO NOT use placeholder URLs like "https://..."
-6. DO NOT wrap response in markdown code blocks`
+- sentiment: {"frustration_level": 1-10, "urgency_score": 1-10, "willingness_to_pay": 1-10}`
       : `Extract 3 distinct problems as JSON array. Each with title, domain, role, overview, gap, automation, action (text), sentiment.`;
 
     const userPrompt = `Analyze: "${query}"\n\nDiscussions:\n${resultsContext}\n\nRespond with valid JSON only.`;
@@ -286,8 +247,7 @@ IMPORTANT RULES:
 
     const analysisResults = Array.isArray(parsed) ? parsed : [parsed];
 
-    // Ensure we have a valid URL before creating the client
-    const supabase = createClient(SUPABASE_URL || "", SUPABASE_SERVICE_ROLE_KEY || "");
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const recordsToInsert = analysisResults.map((result: any, index: number) => {
       let matchingResult = searchResults[0];
