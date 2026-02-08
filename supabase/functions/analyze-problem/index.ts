@@ -217,34 +217,47 @@ Deno.serve(async (req) => {
       .map((r, i) => `[${r.source.toUpperCase()} ${i + 1}]\n${r.title}\n${r.url}\n${r.snippet}`)
       .join("\n\n---\n\n");
 
-    const systemPrompt = mode === "solver"
-      ? `You are an automation expert. Respond with valid JSON (no markdown).
+const systemPrompt = mode === "solver"
+  ? `You are an automation expert analyzing a manual workflow. Respond with ONLY valid JSON (no markdown, no code blocks, no explanations).
 
-Required fields:
-- title: Problem name
-- domain: Industry
-- role: Who faces this
-- overview: What they do (2-3 sentences)
-- gap: Why still manual (2-3 sentences)
-- automation: 3 solutions formatted as **Quick Win:** details **Better:** details **Best:** details
-- action: JSON object with this EXACT structure:
+CRITICAL: The "action" field MUST be a JSON object, NOT a string.
+
+Structure:
 {
-  "diy": {
-    "description": "Build approach",
-    "resources": [
-      {"type": "tutorial", "title": "...", "url": "https://...", "platform": "YouTube", "cost": "Free"}
-    ]
+  "title": "Short problem name",
+  "domain": "Industry category",
+  "role": "Who faces this problem",
+  "overview": "What they're manually doing (2-3 sentences with specific steps)",
+  "gap": "Why it's still manual (2-3 sentences with real barriers from discussions)",
+  "automation": "**Quick Win (No-Code):** Use [Tool X] at $Y/mo to [specific workflow]\\n\\n**Better (Low-Code):** Use [Approach] with [Tech] to [specific workflow]\\n\\n**Best (Full Automation):** Use [Enterprise Tool] at $Z/mo for [complete solution]",
+  "action": {
+    "diy": {
+      "description": "How to build it yourself with specific tools",
+      "resources": [
+        {"type": "tutorial", "title": "Actual tutorial name", "url": "https://youtube.com/specific-video", "platform": "YouTube", "cost": "Free"},
+        {"type": "tool", "title": "Make.com", "url": "https://make.com", "cost": "$9/mo"},
+        {"type": "template", "title": "Template name", "url": "https://real-url.com", "platform": "Notion"}
+      ]
+    },
+    "existing_solutions": [
+      {"name": "Real Tool Name", "url": "https://actualtool.com", "cost": "$49/mo", "description": "Specific feature it provides"}
+    ],
+    "build_opportunity": {
+      "viable": true,
+      "reason": "Specific market gap based on discussions",
+      "search_query": "relevant search for builder mode"
+    }
   },
-  "existing_solutions": [
-    {"name": "Tool", "url": "https://...", "cost": "$X/mo", "description": "What it does"}
-  ],
-  "build_opportunity": {
-    "viable": true,
-    "reason": "Market gap",
-    "search_query": "suggested query"
-  }
+  "sentiment": {"frustration_level": 8, "urgency_score": 7, "willingness_to_pay": 6}
 }
-- sentiment: {"frustration_level": 1-10, "urgency_score": 1-10, "willingness_to_pay": 1-10}`
+
+IMPORTANT RULES:
+1. "action" MUST be a JSON object, never a string
+2. Include 2-3 real resources with actual URLs (search YouTube/Google for real tutorials)
+3. Include 2-3 real existing solutions with actual pricing
+4. Use real tool names (Make.com, Zapier, n8n, etc.)
+5. DO NOT use placeholder URLs like "https://..."
+6. DO NOT wrap response in markdown code blocks`
       : `Extract 3 distinct problems as JSON array. Each with title, domain, role, overview, gap, automation, action (text), sentiment.`;
 
     const userPrompt = `Analyze: "${query}"\n\nDiscussions:\n${resultsContext}\n\nRespond with valid JSON only.`;
