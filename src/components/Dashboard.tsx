@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Eye, AlertTriangle, Zap, ArrowRight, ChevronDown, ChevronUp, CheckCircle2, ExternalLink } from 'lucide-react';
 import type { ViewType } from '@/types/views';
 import type { AnalyzedProblem, ActionPlan } from '@/lib/api/analyze';
-import ActionButtons from './ActionButton';
+import ActionButtons from './ActionButtons';
 
 interface DashboardProps {
   onViewChange: (view: ViewType, query?: string) => void;
