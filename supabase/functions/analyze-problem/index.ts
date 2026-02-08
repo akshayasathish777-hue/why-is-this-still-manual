@@ -15,42 +15,6 @@ interface SearchResult {
   source: SourceType;
 }
 
-interface SentimentScores {
-  frustration_level: number;
-  urgency_score: number;
-  willingness_to_pay: number;
-}
-
-interface ActionResource {
-  type: string;
-  title: string;
-  url: string;
-  platform?: string;
-  cost?: string;
-}
-
-interface ExistingSolution {
-  name: string;
-  url: string;
-  cost: string;
-  description: string;
-}
-
-interface BuildOpportunity {
-  viable: boolean;
-  reason: string;
-  search_query: string;
-}
-
-interface ActionPlan {
-  diy: {
-    description: string;
-    resources: ActionResource[];
-  };
-  existing_solutions: ExistingSolution[];
-  build_opportunity: BuildOpportunity;
-}
-
 async function searchSource(
   apiKey: string,
   query: string,
@@ -135,13 +99,13 @@ Deno.serve(async (req) => {
     // @ts-ignore
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
     // @ts-ignore
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     // @ts-ignore
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     // @ts-ignore
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!FIRECRAWL_API_KEY || !LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    if (!FIRECRAWL_API_KEY || !GEMINI_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing API keys" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -204,22 +168,28 @@ Required fields:
 
     const userPrompt = `Analyze: "${query}"\n\nDiscussions:\n${resultsContext}\n\nRespond with valid JSON only.`;
 
-    const geminiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // CHANGED: Use Gemini API directly instead of Lovable gateway
+    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
+        contents: [{
+          parts: [{
+            text: `${systemPrompt}\n\n${userPrompt}`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2048,
+        }
       }),
     });
 
     if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      console.error("Gemini API error:", errorText);
       return new Response(
         JSON.stringify({ success: false, error: "AI analysis failed" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -227,7 +197,8 @@ Required fields:
     }
 
     const geminiData = await geminiResponse.json();
-    const aiContent = geminiData.choices?.[0]?.message?.content || "";
+    // CHANGED: Different response structure for Gemini
+    const aiContent = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     const cleanedContent = aiContent
       .replace(/```json\n?/g, "")
