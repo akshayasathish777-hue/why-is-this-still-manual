@@ -159,115 +159,128 @@ const Dashboard = ({ onViewChange, analysisResult, sources = [] }: DashboardProp
       description: 'Your action plan',
       content: (
         <div>
-          {isActionPlan ? (
-            <ActionButtons 
-              action={analysisResult.action as ActionPlan}
-              onBuildClick={(query) => {
-                // Navigate to builder mode with pre-filled search
-                onViewChange('builder', query);
-              }}
-            />
-          ) : nextStepsData.steps.length > 0 ? (
-            <div className="space-y-4">
-              {/* Show Preview Steps */}
-              {nextStepsData.structured ? (
-                // Structured format with headers
-                previewSteps.map((step, i) => (
-                  <div key={i} className="p-4 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30">
-                    <div className="flex items-start gap-3 mb-2">
-                      <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
-                        {i + 1}
-                      </span>
-                      <h4 className="font-semibold text-flame-yellow">{step.header}</h4>
-                    </div>
-                    <p className="text-white/80 text-sm ml-9 leading-relaxed">
-                      {step.content}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                // Bullet format
-                <ul className="space-y-3">
-                  {previewSteps.map((step, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
-                        {i + 1}
-                      </span>
-                      <span className="text-white/80 leading-relaxed">{step.content}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+          {(() => {
+            console.log('=== NEXT STEPS DEBUG ===');
+            console.log('Action type:', typeof analysisResult?.action);
+            console.log('Action value:', analysisResult?.action);
+            console.log('Is ActionPlan:', isActionPlan);
+            console.log('========================');
+            
+            if (isActionPlan) {
+              return (
+                <ActionButtons 
+                  action={analysisResult.action as ActionPlan}
+                  onBuildClick={(query) => {
+                    onViewChange('builder', query);
+                  }}
+                />
+              );
+            } else if (nextStepsData.steps.length > 0) {
+              return (
+                <div className="space-y-4">
+                  {/* Show Preview Steps */}
+                  {nextStepsData.structured ? (
+                    // Structured format with headers
+                    previewSteps.map((step, i) => (
+                      <div key={i} className="p-4 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30">
+                        <div className="flex items-start gap-3 mb-2">
+                          <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
+                            {i + 1}
+                          </span>
+                          <h4 className="font-semibold text-flame-yellow">{step.header}</h4>
+                        </div>
+                        <p className="text-white/80 text-sm ml-9 leading-relaxed">
+                          {step.content}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    // Bullet format
+                    <ul className="space-y-3">
+                      {previewSteps.map((step, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
+                            {i + 1}
+                          </span>
+                          <span className="text-white/80 leading-relaxed">{step.content}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
 
-              {/* Expandable Section */}
-              {remainingSteps.length > 0 && (
-                <>
-                  <AnimatePresence>
-                    {showFullPlan && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="space-y-4 overflow-hidden"
-                      >
-                        {nextStepsData.structured ? (
-                          // Structured format
-                          remainingSteps.map((step, i) => (
-                            <div key={i + previewCount} className="p-4 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30">
-                              <div className="flex items-start gap-3 mb-2">
-                                <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
-                                  {i + previewCount + 1}
-                                </span>
-                                <h4 className="font-semibold text-flame-yellow">{step.header}</h4>
-                              </div>
-                              <p className="text-white/80 text-sm ml-9 leading-relaxed">
-                                {step.content}
-                              </p>
-                            </div>
-                          ))
-                        ) : (
-                          // Bullet format
-                          <ul className="space-y-3">
-                            {remainingSteps.map((step, i) => (
-                              <li key={i + previewCount} className="flex items-start gap-3">
-                                <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
-                                  {i + previewCount + 1}
-                                </span>
-                                <span className="text-white/80 leading-relaxed">{step.content}</span>
-                              </li>
-                            ))}
-                          </ul>
+                  {/* Expandable Section */}
+                  {remainingSteps.length > 0 && (
+                    <>
+                      <AnimatePresence>
+                        {showFullPlan && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-4 overflow-hidden"
+                          >
+                            {nextStepsData.structured ? (
+                              // Structured format
+                              remainingSteps.map((step, i) => (
+                                <div key={i + previewCount} className="p-4 rounded-lg bg-flame-yellow/5 border border-flame-yellow/30">
+                                  <div className="flex items-start gap-3 mb-2">
+                                    <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
+                                      {i + previewCount + 1}
+                                    </span>
+                                    <h4 className="font-semibold text-flame-yellow">{step.header}</h4>
+                                  </div>
+                                  <p className="text-white/80 text-sm ml-9 leading-relaxed">
+                                    {step.content}
+                                  </p>
+                                </div>
+                              ))
+                            ) : (
+                              // Bullet format
+                              <ul className="space-y-3">
+                                {remainingSteps.map((step, i) => (
+                                  <li key={i + previewCount} className="flex items-start gap-3">
+                                    <span className="w-6 h-6 rounded-full bg-flame-yellow/20 flex items-center justify-center text-flame-yellow text-sm font-bold shrink-0">
+                                      {i + previewCount + 1}
+                                    </span>
+                                    <span className="text-white/80 leading-relaxed">{step.content}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </motion.div>
                         )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      </AnimatePresence>
 
-                  {/* Toggle Button */}
-                  <button
-                    onClick={() => setShowFullPlan(!showFullPlan)}
-                    className="w-full py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all text-flame-yellow hover:bg-flame-yellow/10 border border-flame-yellow/30 hover:border-flame-yellow/50"
-                  >
-                    {showFullPlan ? (
-                      <>
-                        <ChevronUp className="w-4 h-4" />
-                        <span>Show Less</span>
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="w-4 h-4" />
-                        <span>Show {remainingSteps.length} More Step{remainingSteps.length > 1 ? 's' : ''}</span>
-                      </>
-                    )}
-                  </button>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="text-white/60 text-center py-4">
-              No action plan available
-            </div>
-          )}
+                      {/* Toggle Button */}
+                      <button
+                        onClick={() => setShowFullPlan(!showFullPlan)}
+                        className="w-full py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all text-flame-yellow hover:bg-flame-yellow/10 border border-flame-yellow/30 hover:border-flame-yellow/50"
+                      >
+                        {showFullPlan ? (
+                          <>
+                            <ChevronUp className="w-4 h-4" />
+                            <span>Show Less</span>
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4" />
+                            <span>Show {remainingSteps.length} More Step{remainingSteps.length > 1 ? 's' : ''}</span>
+                          </>
+                        )}
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
+            } else {
+              return (
+                <div className="text-white/60 text-center py-4">
+                  No action plan available
+                </div>
+              );
+            }
+          })()}
         </div>
       ),
     },
