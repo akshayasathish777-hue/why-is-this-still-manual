@@ -24,7 +24,7 @@ const Index = () => {
   const [isProblemsLoading, setIsProblemsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalyzedProblem | null>(null);
   const [analysisSources, setAnalysisSources] = useState<AnalysisSource[]>([]);
-  const [builderQuery, setBuilderQuery] = useState<string>(''); // NEW: Track the search query
+  const [builderQuery, setBuilderQuery] = useState<string>('');// NEW: Track the search query
   const { toast } = useToast();
 
   // Fetch problems from database
@@ -55,13 +55,12 @@ const Index = () => {
     }).join(', ');
   };
 
-  // NEW handleViewChange: Captures queries when moving to Builder
-  const handleViewChange = (view: ViewType, query?: string) => {
-    if (view === 'builder' && query) {
-      setBuilderQuery(query);
-    }
-    setCurrentView(view);
-  };
+const handleViewChange = (view: ViewType, query?: string) => {
+  if (view === 'builder' && query) {
+    setBuilderQuery(query);
+  }
+  setCurrentView(view);
+};
 
   // Discover new problems in builder mode
   const handleDiscoverProblems = async (query: string, sources: SourceType[]) => {
