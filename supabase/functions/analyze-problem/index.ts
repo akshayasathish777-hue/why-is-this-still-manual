@@ -180,11 +180,22 @@ Deno.serve(async (req) => {
     }
 
     // @ts-ignore
-    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
-    // @ts-ignore
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    // @ts-ignore
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    // SAFE KEY FETCHING
+    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || "";
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") || "";
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+
+    // VALIDATION CHECK
+    if (!FIRECRAWL_API_KEY || !LOVABLE_API_KEY) {
+      console.error("CRITICAL ERROR: Keys are missing in Supabase Secrets");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "System keys not configured. Please add FIRECRAWL_API_KEY and LOVABLE_API_KEY to Supabase Secrets." 
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!FIRECRAWL_API_KEY || !LOVABLE_API_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
       return new Response(
@@ -305,7 +316,8 @@ IMPORTANT RULES:
 
     const analysisResults = Array.isArray(parsed) ? parsed : [parsed];
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    // Ensure we have a valid URL before creating the client
+    const supabase = createClient(SUPABASE_URL || "", SUPABASE_SERVICE_ROLE_KEY || "");
 
     const recordsToInsert = analysisResults.map((result: any, index: number) => {
       let matchingResult = searchResults[0];
