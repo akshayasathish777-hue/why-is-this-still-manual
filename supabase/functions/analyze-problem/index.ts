@@ -35,7 +35,7 @@ interface AnalysisResult {
   overview: string;
   gap: string;
   automation: string;
-  action: string;
+  action: any;  // ✅ CHANGED: Can be string or object
   source_url: string;
   sentiment?: SentimentScores;
 }
@@ -457,6 +457,19 @@ Example format:
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const recordsToInsert = analysisResults.map((result, index) => {
+      // ✅ CRITICAL FIX: Parse action if it's a stringified JSON
+      let actionData = result.action;
+      if (typeof actionData === 'string') {
+        try {
+          actionData = JSON.parse(actionData);
+          console.log("[analyze-problem] ✅ Successfully parsed action JSON from string");
+        } catch (e) {
+          console.error('[analyze-problem] ❌ Failed to parse action JSON:', e);
+          console.error('[analyze-problem] Action string was:', actionData?.substring(0, 100));
+          actionData = null;
+        }
+      }
+
       // Find the source type for this result
       const matchingResult = searchResults.find((sr) =>
         result.source_url ? sr.url === result.source_url : false
@@ -469,7 +482,7 @@ Example format:
         overview: result.overview,
         gap: result.gap,
         automation: result.automation,
-        action: result.action,
+        action: actionData,  // ✅ NOW IT'S A PROPER OBJECT OR NULL
         source_type: matchingResult?.source || "reddit",
         source_url: result.source_url || matchingResult?.url || "",
         search_query: query,
